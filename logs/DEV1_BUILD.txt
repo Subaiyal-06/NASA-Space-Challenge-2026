@@ -1,0 +1,1 @@
+S1 | project scaffold | Vite + React + Electron + Tailwind | package.json, electron/*, src/* | opens desktop window

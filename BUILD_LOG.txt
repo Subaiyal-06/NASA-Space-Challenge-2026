@@ -1,0 +1,101 @@
+EARTH JUKEBOX: PAKISTAN
+BUILD LOG (master record of decisions and technology choices)
+=======================================================
+
+What this file is:
+  A record of WHAT we decided, WHICH technology we chose, and WHY.
+  Part A: decisions made before coding (already filled in).
+  Part B: "problem -> technology" table (add rows as we build).
+  Part C: how step-by-step entries are written.
+  The detailed step entries are written by Claude Code into:
+      logs/DEV1_BUILD.txt   and   logs/DEV2_BUILD.txt
+  After each integration checkpoint (hours 12, 24, 36), copy the key lines of both
+  into Part B below so this file stays the complete summary.
+
+
+=======================================================
+PART A: DECISIONS MADE BEFORE CODING
+=======================================================
+
+D1. Project chosen: "Earth Jukebox: Pakistan" (over the junior astronaut trainer game).
+    Why: direct match with NASA data use, local story, less scope risk, accessibility angle.
+
+D2. Core idea: hear Pakistan's climate history as music, month by month, with weather
+    animations, a tension meter, and story markers.
+
+D3. Data reality check (important):
+      - Temperature (NASA GISTEMP): monthly from 1880, coarse grid, anomalies only.
+      - Temperature/rain/drought/air detail (NASA POWER, MERRA-2): from about 1980.
+      - Rain (GPM IMERG): from 2000.  Aerosol (MODIS): from 2000.
+      - Earthquakes: USGS (not NASA).   Future: NASA NEX-GDDP-CMIP6.
+    Consequence: the timeline starts early for temperature and quakes; other layers fade in
+    later ("the orchestra grows").
+
+D4. Platform: desktop app with Electron (not a website). A hosted web build is kept only as a
+    backup link for judges, plus a demo video.
+
+D5. Timeline: one month = 2.5 seconds (96 BPM, 4 beats per bar). Three modes:
+    Month Mode, Year Mode, Story Mode (with smart pacing).
+
+D6. Music: A minor, Interstellar-inspired style (not copying anything), layers driven by a
+    tension index. Chords: calm Am-F-C-G, tense Am-F-Dm-E, one chord per 3 months.
+
+D7. Removed features: uncertainty sound, Urdu toggle.
+
+D8. Added features: globe intro, weather animations, ambient edge glow, ghost weather,
+    smart pacing, record badges.
+
+D9. Weather visuals use values COMPARED TO NORMAL (anomalies), not raw values.
+
+D10. Honesty rules: label projections, label USGS as non-NASA, call the tension index "our own
+     index", and word records "in our data".
+
+D11. Team work: two developers use Claude Code. Developer 1 = engine (data, sound,
+     packaging). Developer 2 = experience (globe, weather, glow, UI, accessibility).
+     They meet at three contracts: the data format, the global clock, the audio API.
+
+D12. Learning rule: every step ends with a lesson and a log entry (CLAUDE.md).
+
+
+=======================================================
+PART B: PROBLEM -> TECHNOLOGY TABLE
+=======================================================
+(Add a row each time we meet a new problem. Keep it short. The learning logs hold the details.)
+
+ Problem                                       | Technology chosen            | Why (short)                              | Step
+ ----------------------------------------------|------------------------------|------------------------------------------|------
+ Desktop app from web skills                   | Electron                     | Web skills, offline, one codebase        | S1
+ Screens that update with data                 | React                        | Components and state                     | S1
+ Fast dev setup                                | Vite                         | Quick dev server, simple config          | S1
+ Shared "current time" for all parts           | Zustand store (clock)        | One source of truth                      | S3
+ Data-driven music in the app                  | Tone.js                      | Synths, Transport, effects               | S5
+ Globe and map                                 | MapLibre GL JS               | Globe view and camera animation          | S8
+ Charts that follow the clock                  | D3.js or Chart.js            | Flexible charts                          | S10
+ Turn NASA files into city JSON                | Python (xarray, pandas)      | Reads NetCDF, strong data tools          | S12
+ Installer for other laptops                   | electron-builder             | Standard Electron packaging              | S16
+ (more rows added as we build)                 |                              |                                          |
+
+
+=======================================================
+PART C: HOW STEP ENTRIES LOOK (for logs/DEVx_BUILD.txt)
+=======================================================
+
+ STEP:            S5 - Audio foundation
+ DATE / TIME:     2026-11-14 14:30
+ DEVELOPER:       1
+ PROBLEM:         We need a steady, musical clock and a first sound.
+ TECH USED:       Tone.js (Transport, synth, reverb, limiter)
+ FILES CHANGED:   src/audio/engine.js (new), src/audio/index.js (new)
+ COMMANDS RUN:    npm install tone
+ RESULT:          Drone plays at 96 BPM, Start/Stop works.
+ DECISION:        Chose Tone.js over raw Web Audio. Alternatives: pre-recorded stems.
+ OPEN ISSUES:     Pad sound is thin. Revisit in S6.
+ COMMIT:          "S5: drone and transport"
+
+
+=======================================================
+PART D: PROBLEMS WE HIT AND HOW WE SOLVED THEM
+=======================================================
+(Judges love honest problem-solving stories. Add them here as they happen.)
+
+ (empty for now)

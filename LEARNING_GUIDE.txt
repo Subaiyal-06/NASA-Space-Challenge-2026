@@ -1,0 +1,462 @@
+EARTH JUKEBOX: PAKISTAN
+LEARNING GUIDE
+=======================================================
+
+How to use this file:
+  - Parts 1-5 (including Part 2B, Coding Foundations) are the FOUNDATIONS. Read them
+    before coding (about 45-60 minutes). Part 2B is the most important for learning to code.
+  - Step-by-step lessons are NOT here. Claude Code writes them into your own files:
+        logs/DEV1_LEARNING.txt   or   logs/DEV2_LEARNING.txt
+  - Part 6 is practice for judge and teammate questions. Answer out loud first,
+    then check the answer.
+  - The goal: after this hackathon you can explain every part of the project.
+
+
+=======================================================
+PART 1: THE BIG PICTURE (one page)
+=======================================================
+
+What the app does:
+  A person picks a Pakistani city. The app plays that city's climate history, month
+  by month, as music, while the map, graphs and screen glow show the same data.
+
+How it works, in five stages:
+
+  1. DATA      NASA and USGS publish climate and earthquake data (big files).
+  2. PIPELINE  Python scripts turn those big files into small JSON files, one per
+               city (monthly values, normals, a baseline, a tension score, records).
+               This happens once, before the demo.
+  3. APP       The desktop app (Electron + React) loads the JSON files. No internet
+               calls to NASA are needed while it runs.
+  4. CLOCK     One global clock says "it is now March 1985". It is the single
+               source of truth.
+  5. OUTPUTS   Everything reads the clock: the music engine plays the right sounds,
+               the charts move their cursor, the map draws weather, the screen edges
+               glow, the tension meter updates.
+
+Why "one clock"? If sound, charts and animation each kept their own time, they would
+drift apart. With one clock they cannot disagree.
+
+Why pre-process data? NASA servers can be slow or need a login. If the demo depends
+on them, the demo can fail. Local JSON files never fail.
+
+
+=======================================================
+PART 2: WORDS YOU MUST KNOW (glossary)
+=======================================================
+
+APP / PROGRAMMING
+  Node.js        Lets JavaScript run on your computer (not only in a browser).
+  npm            Node's package manager. It downloads libraries listed in package.json.
+  package.json   The project's "ingredients list" and the commands (scripts) to run it.
+  Vite           A tool that runs our app quickly while developing and bundles it later.
+  React          A library for building screens out of small pieces called components.
+  Component      One piece of the screen (a Timeline, a Sun). A function that returns
+                 what to draw.
+  Props          The inputs we give a component. Example: <Sun intensity=0.8 ghost />.
+  State          Data that changes over time (the current month). When state changes,
+                 the screen updates.
+  Zustand        A small library to keep shared state (our clock) in one place.
+  Electron       Wraps our web app into a desktop app. It has two sides:
+                   - Main process: the "manager" that opens windows and talks to the
+                     operating system.
+                   - Renderer: the window itself, where our React app runs.
+  electron-builder  The tool that creates the installer.
+  Git / branch / commit / merge
+                 Git saves versions. A branch is a separate line of work. A commit is a
+                 saved step. A merge combines branches.
+  JSON           A text format for data: {"city": "Karachi", "values": [1, 2, 3]}.
+  Schema / contract  The agreed shape of our JSON, so every part reads it the same way.
+  API            A set of functions one part offers to another (for example
+                 setTension(0.7)). The other part only needs to know the function,
+                 not how it works inside.
+
+DATA AND CLIMATE
+  Anomaly        The difference from a normal value. "+1.2 C" means 1.2 degrees warmer
+                 than the baseline. We use anomalies so changes are visible and so
+                 Karachi is not "hot" every June just because it is June.
+  Baseline       The reference period we compare to. GISTEMP uses 1951-1980. Our ghost
+                 weather uses 1981-1990.
+  Normals        The average value for each calendar month.
+  Grid cell      Satellite and model data come as a grid of squares. A "city value" is
+                 the value of the square that contains the city. Squares can be big
+                 (GISTEMP about 2 degrees), so nearby cities can share one.
+  NetCDF         The file format for gridded climate data. Python reads it with xarray.
+  Reanalysis     A model that blends many observations into a complete record
+                 (MERRA-2 is one). Good for trends, not the same as a weather station.
+  GISTEMP        NASA GISS temperature dataset, monthly, from 1880, as anomalies.
+  MERRA-2        NASA reanalysis from 1980. Temperature, rain, aerosols and more.
+  NASA POWER     Easy NASA data service (built on MERRA-2 and others), from about 1981.
+  GPM IMERG      NASA satellite rainfall estimates, from 2000.
+  MODIS AOD      Satellite measure of aerosol optical depth: how much light airborne
+                 particles (smoke, dust) block. More = hazier air.
+  SPI            Standardized Precipitation Index. It compares rainfall over a period
+                 to the long-term pattern. Below about -1 means dry; below -2 very dry.
+                 We use it as our drought measure.
+  USGS ComCat    The earthquake catalog. Old records are complete only for larger quakes.
+  NEX-GDDP-CMIP6 NASA climate PROJECTIONS to 2100 under different future scenarios.
+  SSP scenario   A story about future emissions (lower or higher). Projections show what
+                 might happen under that story. They are not predictions.
+  Normalization  Rescaling values to 0-1 so they can drive sounds and animations.
+  Percentile     "This month's rain was higher than 90 percent of Junes."
+  Tension index  OUR OWN simple 0-1 score: a weighted mix of heat, drought, haze, heavy
+                 rain and recent earthquakes. Not an official NASA measure.
+  Interest score OUR OWN 0-1 score of how unusual a month is. Low = calm month.
+
+SOUND AND MUSIC
+  Sonification   Turning data into sound.
+  Web Audio      The browser's built-in sound system. Tone.js is a friendly layer on it.
+  Tone.js        A library for music in the browser (synths, effects, a musical clock).
+  Transport      Tone.js's musical clock. It runs at a tempo and schedules sounds on beats.
+  BPM            Beats per minute. 96 BPM with 4 beats per bar = 2.5 seconds per bar.
+  Bar            A group of beats. In our app, one bar = one month.
+  Scale          The set of allowed notes. Ours is A minor: A B C D E F G.
+  Key            The home scale of the piece (A minor).
+  Chord          Several notes played together. Am, F, C, G is our calm loop.
+  Arpeggio       The notes of a chord played one after another in a pattern.
+  Drone          A very long, low, steady note.
+  Pad            Soft, slow, held chords.
+  Quantize       Force a note to the nearest allowed note in the scale.
+  Interpolation  Moving smoothly between two values instead of jumping.
+  Reverb         Echo that makes the sound feel like a big hall. Lots of it gives
+                 the "film score" feel.
+  Filter         Removes high or low frequencies. A closing filter makes sound dull.
+  Limiter        Stops the sound from getting too loud and distorting.
+  Stereo pan     Placing a sound left or right between your ears.
+  Autoplay policy  Browsers (and Electron) may block sound until the user clicks.
+                 That is why we have a Start button.
+
+
+=======================================================
+PART 2B: CODING FOUNDATIONS (read before Step S1)
+=======================================================
+
+This is a fast tour of the code ideas you will meet. Every example is small and
+connected to our project. Type them yourself in a scratch file or the browser console
+(press F12 in Chrome, open "Console"). Typing teaches more than reading.
+
+--- JAVASCRIPT BASICS ---
+
+1. Variables hold values.
+     const city = "Karachi";      // const: cannot be reassigned
+     let month = 0;               // let: can change later
+     month = month + 1;
+
+2. Functions are reusable recipes: input in, result out.
+     function double(x) { return x * 2; }
+     const double2 = (x) => x * 2;      // arrow function: same thing, shorter
+   Why: we write a function once and call it every month, for every city.
+
+3. Arrays are ordered lists. Objects are labeled boxes.
+     const rain = [0, 2, 0, 5, 12, 40, 180, 220, 60, 3, 0, 1];   // 12 months
+     const city = { name: "Karachi", lat: 24.86, lon: 67.0 };
+     rain[6]        // 180   (counting starts at 0, so index 6 is July)
+     city.name      // "Karachi"
+   Our city JSON is objects inside objects with arrays at the bottom:
+     city.layers.temperature.monthly["1981"][5]   // June 1981
+
+4. Array helpers: map, filter, reduce.
+     rain.map((mm) => mm / 10)            // new array with every value divided by 10
+     rain.filter((mm) => mm > 100)        // only the very wet months
+     rain.reduce((sum, mm) => sum + mm, 0)   // total rain for the year
+   Why: they replace long loops with one readable line.
+
+5. Conditions.
+     if (rainfall > 100) { weather = "storm"; } else { weather = "calm"; }
+     const label = rainfall > 100 ? "storm" : "calm";    // same, shorter ("ternary")
+
+6. Loops: repeat something.
+     for (let m = 0; m < 12; m++) { console.log(m); }
+
+7. Modules: split code into files.
+     // scale.js
+     export const SCALE = [57, 59, 60, 62, 64, 65, 67];   // A minor notes as MIDI numbers
+     // engine.js
+     import { SCALE } from "./scale.js";
+   Why: small files are easier to understand and to share between two developers.
+
+8. Async code: things that take time (loading a file).
+     async function loadCity(name) {
+       const response = await fetch(`data/cities/${name}.json`);   // wait for the file
+       return await response.json();                                // wait for parsing
+     }
+   "await" means "pause this function until the result is ready, but keep the app alive".
+
+9. Small math helpers we will use a lot (turn data into 0-1):
+     const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+     const normalize = (v, min, max) => clamp((v - min) / (max - min), 0, 1);
+     normalize(1.5, 0, 3)    // 0.5   (1.5 is halfway between 0 and 3)
+   Why: sounds and animations like numbers from 0 to 1.
+
+10. Quantize to a scale (force any number to the nearest allowed note):
+     const quantize = (x) =>
+       SCALE.reduce((best, n) => (Math.abs(n - x) < Math.abs(best - x) ? n : best));
+     quantize(61)   // 60 or 62 (whichever is closer)
+    Why: this is why our music never plays a "wrong" note.
+
+--- REACT BASICS ---
+
+11. A component is a function that returns what to show (JSX looks like HTML).
+     function Sun({ intensity }) {
+       return <div style={{ opacity: intensity }}>Sun</div>;
+     }
+     <Sun intensity={0.8} />      // using it. "intensity" is a prop (an input).
+
+12. State is data that, when changed, makes the screen update.
+     import { useState } from "react";
+     function Counter() {
+       const [count, setCount] = useState(0);
+       return <button onClick={() => setCount(count + 1)}>{count}</button>;
+     }
+   Rule: never change state directly (count = 5). Always call the setter (setCount).
+
+13. useEffect runs code AFTER the screen draws (timers, loading, sound).
+     useEffect(() => {
+       const id = setInterval(() => console.log("tick"), 2500);
+       return () => clearInterval(id);        // cleanup when the component goes away
+     }, []);                                   // [] = run once
+   Beginner mistake: forgetting the cleanup, so timers pile up.
+
+14. Lists: show many items from an array.
+     {cities.map((c) => <Marker key={c.name} city={c} />)}
+   "key" helps React track each item.
+
+--- ZUSTAND: OUR GLOBAL CLOCK ---
+
+15. A store is shared state any component can read.
+     import { create } from "zustand";
+     export const useClock = create((set) => ({
+       year: 1981, month: 0, playing: false,
+       play: () => set({ playing: true }),
+       nextMonth: () => set((s) =>
+         s.month === 11 ? { year: s.year + 1, month: 0 } : { month: s.month + 1 }),
+     }));
+     // in any component:
+     const year = useClock((s) => s.year);     // re-renders when year changes
+   Why: audio, charts, map and glow all read this one store, so they stay in sync.
+
+--- TONE.JS: SOUND ---
+
+16. The smallest sound:
+     import * as Tone from "tone";
+     await Tone.start();                       // must happen after a click
+     const synth = new Tone.Synth().toDestination();
+     synth.triggerAttackRelease("A3", "2n");   // play A3 for a half note
+17. The musical clock:
+     Tone.Transport.bpm.value = 96;            // 96 beats per minute
+     Tone.Transport.start();
+   Everything we schedule on the Transport stays on the beat.
+
+--- ELECTRON: THE DESKTOP SHELL ---
+
+18. The main process opens the window; the window shows our React app.
+     const { app, BrowserWindow } = require("electron");
+     app.whenReady().then(() => {
+       const win = new BrowserWindow({ width: 1280, height: 800 });
+       win.loadURL("http://localhost:5173");     // Vite's dev server address
+     });
+
+--- PYTHON: THE DATA PIPELINE ---
+
+19. Reading a NASA file and picking one city's values (variable names vary by dataset):
+     import xarray as xr
+     ds = xr.open_dataset("file.nc")
+     value = ds["T2M"].sel(lat=24.86, lon=67.0, method="nearest")
+   "method=nearest" picks the closest grid square to Karachi.
+
+--- HOW TO LEARN CODE FROM THIS PROJECT ---
+
+ - Type, don't copy. Retype Claude Code's small functions into a scratch file.
+ - Three passes over any new code:
+     Pass 1: what is the goal (input -> output)?
+     Pass 2: what does each line do?
+     Pass 3: why this way and not another way?
+ - Make it break on purpose. Change a value, remove a line, read the error.
+ - Read error messages from the top: the first line says WHAT, the file and line
+   number say WHERE.
+ - Use console.log to see values while the app runs.
+ - After each step, rewrite the key function from memory without looking. If you can,
+   you understand it.
+
+
+=======================================================
+PART 3: WHY EACH TECHNOLOGY (problem -> choice -> alternatives)
+=======================================================
+
+PROBLEM: We need a desktop app, and our team knows web tools.
+  CHOICE: Electron (a web app in a desktop window).
+  ALTERNATIVES: Tauri (smaller, but needs Rust), Python with Qt (different skills).
+  TRADE-OFFS: Electron apps are bigger and installers can show "unverified" warnings.
+
+PROBLEM: Build screens that update when data changes.
+  CHOICE: React (components and state).
+  ALTERNATIVES: plain JavaScript (messy at this size), Vue or Svelte (also fine).
+
+PROBLEM: Fast development and simple project setup.
+  CHOICE: Vite.
+
+PROBLEM: Many parts must agree on the current time.
+  CHOICE: One Zustand store (the global clock).
+  ALTERNATIVES: passing time through many components by hand (error-prone).
+
+PROBLEM: Real-time, data-driven music in a desktop app with no musical staff.
+  CHOICE: Tone.js (synths, Transport, effects).
+  ALTERNATIVES: pre-recorded tracks (cannot react to data), raw Web Audio (more code).
+
+PROBLEM: A globe that zooms into Pakistan and a map with markers.
+  CHOICE: MapLibre GL JS (globe view, camera animation) with NASA GIBS tiles.
+  ALTERNATIVES: Globe.gl or CesiumJS (also good; heavier or different style).
+  FALLBACK: a local Pakistan outline for when there is no internet.
+
+PROBLEM: Draw charts that move with the clock.
+  CHOICE: D3.js or Chart.js.
+
+PROBLEM: Turn huge NASA files into small city files.
+  CHOICE: Python with xarray, pandas, numpy.
+  ALTERNATIVES: JavaScript (poor support for NetCDF), R (also good, but the team uses Python).
+
+PROBLEM: Demo must not depend on slow or locked NASA servers.
+  CHOICE: Pre-process once; ship the JSON inside the app.
+
+PROBLEM: Make an installer that works on other laptops.
+  CHOICE: electron-builder.
+
+
+=======================================================
+PART 4: HOW TO READ CODE YOU DID NOT WRITE
+=======================================================
+
+You will read a lot of code written by Claude Code. Use this routine:
+
+  1. Start from the files list: which files changed? (git diff --stat)
+  2. Read the file name and folder first. Names tell the story (clock.js, engine.js).
+  3. Find the "entry point": the function other files call (the exported ones).
+  4. Read the top of the file: imports show what it depends on.
+  5. Trace one action by hand: "I press Space -> which function runs -> what state
+     changes -> which components redraw?"
+  6. Add a console.log in one place, run the app, watch the output.
+  7. Change one number, run it, see what changed.
+  8. Explain it in your own words to a teammate. If you get stuck, ask Claude Code
+     "Explain this function line by line like I am new to it."
+
+Questions that always help:
+  - What goes IN? What comes OUT?
+  - Where is the state stored?
+  - What would break if I deleted this?
+
+
+=======================================================
+PART 5: HONESTY RULES (we say these in the pitch)
+=======================================================
+
+  - NASA temperature goes back to 1880 (as anomalies on a coarse grid).
+    NASA rainfall, drought and air data start around 1980-2000.
+  - Earthquakes come from USGS, not NASA.
+  - Future years are projections, not measurements.
+  - The tension index and interest score are OUR simple indexes, not official ones.
+  - Records are always "in our data", because they cover only the years we have.
+  - City-to-city comparison before 1980 is weak for temperature (coarse grid).
+  - We used Claude Code as a coding assistant. We reviewed, tested and documented
+    the work. Check the official rules on AI tools and follow the disclosure rules.
+
+
+=======================================================
+PART 6: JUDGE AND TEAMMATE QUESTIONS (practice)
+=======================================================
+
+Cover the answer, say yours out loud, then compare. Improve the answers with the
+real details of what you built. Edit this file as you learn.
+
+Q1.  What problem does your project solve?
+A1.  Climate data is hard to feel and hard to access for people who cannot read
+     charts. We turn Pakistan's climate history into music, animation and short
+     stories, so anyone, including children and blind or low-vision users, can
+     understand how the climate changed.
+
+Q2.  Why sound?
+A2.  Sound shows change over time very naturally (pitch, rhythm, tension). It also
+     reaches people who cannot use charts, and it is memorable.
+
+Q3.  Which NASA data did you use, and from when?
+A3.  Temperature: GISTEMP (from 1880) and NASA POWER/MERRA-2 (from about 1981).
+     Rainfall, drought and aerosols: NASA POWER, MERRA-2, GPM IMERG (from 1980-2000).
+     Future: NEX-GDDP-CMIP6. Earthquakes: USGS. (Say exactly which ones you really used.)
+
+Q4.  Why anomalies and not raw temperature?
+A4.  Raw values are dominated by the seasons. Anomalies show change compared to normal,
+     so trends and unusual months become visible and audible.
+
+Q5.  What is the tension index? Is it scientific?
+A5.  It is our own simple score from 0 to 1: heat, drought, haze, heavy rain and recent
+     earthquakes, each scaled and mixed with adjustable weights. It makes the music
+     tell a story. It is not an official NASA measure and we say so.
+
+Q6.  Your data starts in different years. How do you handle that?
+A6.  Each layer has a start year. The orchestra grows: instruments join when real
+     measurements begin, so the limits of the data become something you can hear.
+
+Q7.  How good is the rainfall data?
+A7.  MERRA-2 is a reanalysis (model plus observations) and IMERG is a satellite
+     estimate. Both are good for trends and big events, but neither equals a rain
+     gauge. We show sources on screen.
+
+Q8.  Why is city comparison weak before 1980?
+A8.  Long-term temperature data is on a coarse grid (about 2 degrees), so nearby
+     cities can share one value. We default comparison to 1981 onward.
+
+Q9.  Are your future projections predictions?
+A9.  No. They are model projections for two scenarios (lower and higher emissions).
+     They show possibilities, not certainties, and are labeled "Projection".
+
+Q10. Why a desktop app (Electron)?
+A10. It runs offline, needs no server, and lets us reuse web skills. The trade-off is
+     size and installer warnings, so we also provide a video and a web backup.
+
+Q11. How do sound, graphs and animation stay in sync?
+A11. One global clock holds the current year and month. Every part reads it, so they
+     cannot drift apart.
+
+Q12. How does data become music?
+A12. Each month is one musical bar (96 BPM, 2.5 seconds). Climate stress sets the
+     tension level, which brings layers in (arpeggio, organ-like pad, strings,
+     pulse). Rain adds notes, earthquakes add a boom, drought darkens the sound,
+     haze adds airy noise. All notes are forced onto a minor scale.
+
+Q13. Why A minor and 96 BPM?
+A13. A minor has a serious, cinematic tone and any scale note sounds fine together.
+     96 BPM with 4 beats per bar makes a bar exactly 2.5 seconds, which equals one
+     month in our timeline.
+
+Q14. How is it accessible?
+A14. Full keyboard control, a voice announcer, high-contrast theme, a Reduce Motion
+     setting, and the data is available as sound, picture and text.
+
+Q15. What do the ghost weather and quiet-month features do?
+A15. In calm stretches, a faint ghost of the 1980s weather appears beside the current
+     weather, showing slow change. Long calm stretches are skipped in Story Mode,
+     and record badges mark notable moments, always "in our data".
+
+Q16. How did you check your data was right?
+A16. We wrote a check script for the file format and spot-checked against known
+     events (for example the 2005 earthquake and the 2022 floods).
+
+Q17. What are the biggest limitations?
+A17. Coarse early temperature data, no NASA rainfall before 1980, our indexes are
+     simple, and only a few cities. (Add your real list.)
+
+Q18. How would you scale this?
+A18. More cities and regions in South Asia, school lessons, more variables, and
+     a downloadable data pack. (Add your own ideas.)
+
+Q19. How did you use AI tools?
+A19. We used Claude Code as a coding assistant. We reviewed every step, tested it,
+     and documented what we learned. Data choices, design and the story were team
+     decisions. (Say what is true for your team, and follow the official AI-use rules.)
+
+Q20. What did each of you personally build?
+A20.  Answer this from your own learning log. It should be easy if you did the
+     teach-back after every step.
+
+=======================================================
+END OF FOUNDATIONS. Next: start Step S1 in DEVELOPMENT_PLAN.txt.
+=======================================================
