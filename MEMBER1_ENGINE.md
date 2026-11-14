@@ -36,7 +36,11 @@ Make the app **sound right and have real data**: a music engine driven by the te
 
 ## 4. Your steps, in priority order
 
-Shared first (about 3 hours, both of you, one person drives): **S1** scaffold, **S2** data contract + sample data (you lead), **S3** global clock (Member 2 leads).
+**Startup sequence (prevents conflicting files):** you go first, alone, for about 1-1.5 hours.
+1. **S1:** scaffold the project, install ALL planned dependencies in one go (react, vite, electron, electron-builder, zustand, tone, maplibre-gl, d3 or chart.js, tailwind), create every folder with placeholder files, add `.gitignore` (node_modules, `.env`, `pipeline/raw/`, build output), create `logs/`. Commit and **push to `main`**.
+2. **S2 minimum:** add the sample city JSON (`data/cities/karachi.sample.json`) and the data loader. Commit and **push to `main`**. Tell Member 2 they can start.
+3. Member 2 now starts S3 (clock) and S4 (timeline) on their branch. You carry on with the S2 check script, then S5 audio.
+4. Conflict rules: only Member 2 edits `src/App.jsx` (you test audio on your own page, `src/dev/AudioTest.jsx`). If you need a new package, commit `package.json` and the lock file on their own, merge to `main` straight away, and tell Member 2. Before every step run `git pull origin main`.
 
 Then, in this order:
 

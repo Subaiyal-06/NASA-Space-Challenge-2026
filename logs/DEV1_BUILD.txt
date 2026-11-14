@@ -1,1 +1,3 @@
 S1 | project scaffold | Vite + React + Electron + Tailwind | package.json, electron/*, src/* | opens desktop window
+S1 (update) | all deps + placeholders | maplibre-gl, d3 added; src/dev | package.json | installed, build ok
+S2 | sample data + loader + check script | Node, Vite glob import | data/cities/karachi.sample.json, src/data/*, tests/* | check passes, fails when file broken

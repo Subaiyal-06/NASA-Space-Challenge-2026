@@ -377,8 +377,19 @@ DEVELOPER 2: EXPERIENCE TRACK (what people see and touch)
   Steps: S3 (lead), S4, S8, S9, S10, S11 (UI part), S13 (UI), S14 (UI), S15
   Branch: dev2-experience
 
-BOTH TOGETHER: S1, S2, S3 (about 3 hours, one person drives, the other watches and asks)
-  and S17 at the end.
+STARTUP SEQUENCE (replaces the old "both together" idea; avoids conflicting files):
+  1. Member 1 does S1 alone: scaffold, install ALL planned dependencies at once, create all
+     folders with placeholder files, .gitignore, logs/. Push to main. (about 30-60 min)
+  2. Member 1 adds the S2 minimum (sample city JSON + loader). Push to main. (about 30 min)
+  3. Member 2 pulls main, creates branch dev2-experience, and starts S3 (clock) and S4.
+     Member 1 continues with the S2 check script, then S5 audio.
+  4. Conflict rules: only Member 2 edits src/App.jsx; Member 1 tests audio on
+     src/dev/AudioTest.jsx. Package changes are committed alone, merged to main at once,
+     and announced. Everyone runs "git pull origin main" before each step.
+  5. While waiting, Member 2 prepares non-code work: tools, screen sketches, palette, Pakistan
+     outline, city list, story cards.
+  Where Part 3 says "[Both, together]" for S1-S3, follow this sequence instead.
+  S17 (polish and demo) is done by both at the end.
 
 WHY THIS SPLIT WORKS: the two tracks only touch at three places (the data format,
 the clock, the audio API). Those are fixed in Part 1.7, so each person can work with

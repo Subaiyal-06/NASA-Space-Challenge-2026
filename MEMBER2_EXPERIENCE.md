@@ -32,7 +32,18 @@ Make the app **look alive and be easy to use**: the globe that zooms into Pakist
 
 ## 4. Your steps, in priority order
 
-Shared first (about 3 hours, both of you, one person drives): **S1** scaffold, **S2** data contract + sample data (Member 1 leads), **S3** global clock (you lead).
+**Startup sequence (prevents conflicting files):** Member 1 goes first, alone, for about 1-1.5 hours: **S1** (scaffold, all dependencies installed, folders created) and the **S2 minimum** (sample city JSON and data loader), both pushed to `main`. **Wait for Member 1 to say the push is done.** Then clone (or `git pull origin main`), create your branch `dev2-experience`, and start **S3** (clock), then **S4** (timeline).
+
+**While you wait (no code needed):**
+- Install Git, Node.js (current LTS) and make sure Antigravity opens.
+- Sketch the screens on paper or in Figma: globe intro, main player screen, compare view. Pick a color palette and a kid-friendly look.
+- Prepare a simple Pakistan outline file (GeoJSON, from a public-domain source such as Natural Earth) and a list of the 5 starter cities with their coordinates.
+- Draft the 8-10 story cards (event, date, 2-3 sentences, source link).
+- Read README Section 4 (Features 1, 2, 6, 6A, 6B).
+
+**Conflict rules:** only you edit `src/App.jsx`. If you need a new package, commit `package.json` and the lock file on their own, merge to `main` straight away, and tell Member 1. Before every step run `git pull origin main`.
+
+After S3 you work alone from here:
 
 Then, in this order:
 
