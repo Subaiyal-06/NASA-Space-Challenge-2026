@@ -1,28 +1,26 @@
-// Loads and checks city JSON files from data/cities/.
-// Vite bundles these files into the app, so it works offline (no server, no NASA calls).
+// Loads city files listed in data/index.json. Vite bundles the JSON into the app, so it works offline.
+// To switch a city from sample to real data: put the real file in data/cities/ and change its
+// "file" line in data/index.json. No code change needed.
+import index from "../../data/index.json";
 import { validateCity } from "./validate.js";
 
 const files = import.meta.glob("../../data/cities/*.json"); // lazy: loaded only when asked
+const cache = new Map();
 
-// Names of available cities, e.g. "karachi.sample", "karachi", "lahore"
-export function listCities() {
-  return Object.keys(files).map((p) => p.split("/").pop().replace(".json", ""));
-}
+export const getCityList = () => index.map(({ id, name, lat, lon }) => ({ id, name, lat, lon }));
 
-// loadCity("karachi") prefers the real file; falls back to "karachi.sample".
 export async function loadCity(id) {
-  const key = [`../../data/cities/${id}.json`, `../../data/cities/${id}.sample.json`].find((k) => files[k]);
-  if (!key) throw new Error(`No data file for city "${id}". Available: ${listCities().join(", ")}`);
-  const data = (await files[key]()).default;
+  if (cache.has(id)) return cache.get(id);
+  const entry = index.find((c) => c.id === id);
+  if (!entry) throw new Error(`Unknown city "${id}". Known cities: ${index.map((c) => c.id).join(", ")}`);
+  const loader = files[`../../data/${entry.file}`];
+  if (!loader) throw new Error(`data/index.json says city "${id}" is in "${entry.file}", but that file does not exist.`);
+  const data = (await loader()).default;
   const problems = validateCity(data);
   if (problems.length) console.warn(`[data] ${id} has problems:`, problems);
+  cache.set(id, data);
   return data;
 }
 
-// Helpers shared by audio and UI: value for a given layer/year/month, or null if the layer has not started.
-export function getValue(city, layer, year, month) {
-  const arr = city?.layers?.[layer]?.monthly?.[year];
-  return arr ? arr[month] : null;
-}
-export const getTension = (city, year, month) => city?.tension?.[year]?.[month] ?? 0;
-export const getInterest = (city, year, month) => city?.interest?.[year]?.[month] ?? 0;
+// Used by getSnapshot when it is given a city id instead of a city object.
+export const getLoadedCity = (id) => cache.get(id);

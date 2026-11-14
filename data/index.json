@@ -1,0 +1,9 @@
+[
+  {
+    "id": "karachi",
+    "name": "Karachi",
+    "lat": 24.86,
+    "lon": 67.0,
+    "file": "cities/karachi.sample.json"
+  }
+]
