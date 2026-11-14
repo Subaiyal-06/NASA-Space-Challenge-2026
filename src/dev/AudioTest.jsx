@@ -30,7 +30,9 @@ export default function AudioTest() {
         Tension: {tension.toFixed(2)}
         <input type="range" min="0" max="1" step="0.01" value={tension} onChange={changeTension} className="w-full" />
       </label>
-      <p className="opacity-60 text-sm">Tension slider has no sound effect until S6.</p>
+      <p className="opacity-60 text-sm">
+        0-0.2 drone + soft pad &middot; 0.2 arpeggio &middot; 0.4 fuller pad, arp higher &middot; 0.6 strings, faster, tense chords &middot; 0.8 pulse + big reverb
+      </p>
     </main>
   );
 }

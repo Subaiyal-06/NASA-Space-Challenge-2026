@@ -1,6 +1,7 @@
 // Music engine core (S5): musical clock + drone -> reverb -> limiter -> speakers.
 // One bar = 4 beats at 96 BPM = 2.5 seconds = one month in the app.
 import * as Tone from "tone";
+import { buildLayers } from "./layers.js";
 
 export const BPM = 96;
 export const BEATS_PER_BAR = 4;
@@ -9,6 +10,8 @@ export const BAR_SECONDS = (60 / BPM) * BEATS_PER_BAR; // 2.5
 let built = false;
 let running = false;
 let nodes = {}; // reverb, limiter, drone ...
+let layers = null;
+let tension = 0;
 const barListeners = new Set();
 
 async function build() {
@@ -31,8 +34,18 @@ async function build() {
     barListeners.forEach((fn) => fn(time));
   }, "1m");
 
+  layers = buildLayers(reverb, reverb); // pad, arpeggio, strings, pulse (S6)
+  layers.setTension(tension);
+
   nodes = { limiter, reverb, droneFilter, drone };
   built = true;
+}
+
+// Tension 0..1. Safe to call before start(); it is applied when the engine is built.
+export function setEngineTension(x) {
+  tension = Math.min(1, Math.max(0, x));
+  layers?.setTension(tension);
+  nodes.droneFilter?.frequency.rampTo(350 + 900 * tension, BAR_SECONDS); // drone gets brighter too
 }
 
 // Must be called from a user click (browsers block audio until then).
@@ -49,6 +62,7 @@ export function stopEngine() {
   if (!built || !running) return;
   nodes.drone.releaseAll();
   Tone.Transport.stop();
+  layers?.reset();
   running = false;
 }
 
