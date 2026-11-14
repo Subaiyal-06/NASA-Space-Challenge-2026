@@ -43,7 +43,7 @@ export function buildInstruments(out, master, layers) {
 
   // values = output of computeMonthValues(); fire = true only when a new month starts
   function apply(v, fire) {
-    ramp(rainNoiseGain.gain, v.rainLevel * 0.3);
+    ramp(rainNoiseGain.gain, v.rainLevel * 0.1); // quiet hiss: should sit under the notes, not sound like haze
     ramp(rumbleGain.gain, v.drought * 0.7);
     ramp(hazeGain.gain, v.haze * 0.25);
     // drought and haze make the whole mix drier and darker (master low-pass closes)
