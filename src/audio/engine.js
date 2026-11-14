@@ -2,6 +2,7 @@
 // One bar = 4 beats at 96 BPM = 2.5 seconds = one month in the app.
 import * as Tone from "tone";
 import { buildLayers } from "./layers.js";
+import { buildInstruments } from "./instruments.js";
 
 export const BPM = 96;
 export const BEATS_PER_BAR = 4;
@@ -11,6 +12,8 @@ let built = false;
 let running = false;
 let nodes = {}; // reverb, limiter, drone ...
 let layers = null;
+let instruments = null;
+let pending = null; // latest month values, applied when the engine is (re)started
 let tension = 0;
 const barListeners = new Set();
 
@@ -18,7 +21,9 @@ async function build() {
   if (built) return;
   // Signal chain (right to left): drone -> filter -> reverb -> limiter -> destination
   const limiter = new Tone.Limiter(-3).toDestination(); // never harshly loud
-  const reverb = new Tone.Reverb({ decay: 7, wet: 0.45 }).connect(limiter);
+  // Master low-pass: closes with drought and haze (dry, muffled sound). Sits after the reverb.
+  const master = new Tone.Filter(16000, "lowpass").connect(limiter);
+  const reverb = new Tone.Reverb({ decay: 7, wet: 0.45 }).connect(master);
   await reverb.ready; // reverb builds its echo tail asynchronously
   const droneFilter = new Tone.Filter(400, "lowpass").connect(reverb);
   const drone = new Tone.PolySynth(Tone.Synth, {
@@ -36,8 +41,10 @@ async function build() {
 
   layers = buildLayers(reverb, reverb); // pad, arpeggio, strings, pulse (S6)
   layers.setTension(tension);
+  instruments = buildInstruments(reverb, master, layers); // data instruments (S7)
+  if (pending) instruments.apply(pending, false);
 
-  nodes = { limiter, reverb, droneFilter, drone };
+  nodes = { limiter, reverb, master, droneFilter, drone };
   built = true;
 }
 
@@ -48,6 +55,13 @@ export function setEngineTension(x) {
   nodes.droneFilter?.frequency.rampTo(350 + 900 * tension, BAR_SECONDS); // drone gets brighter too
 }
 
+// Data for the current month (from mapping.js). fire = a new month started: play one-off sounds
+// (rain notes, quake boom). Safe before start(): the latest values are applied when the engine starts.
+export function applyMonthValues(v, fire = false) {
+  pending = v;
+  instruments?.apply(v, fire && running);
+}
+
 // Must be called from a user click (browsers block audio until then).
 export async function startEngine() {
   await Tone.start();
@@ -56,6 +70,7 @@ export async function startEngine() {
   nodes.drone.triggerAttack(["A1", "E2"]); // A and its fifth: both in the A minor scale
   Tone.Transport.start();
   running = true;
+  if (pending) instruments?.apply(pending, false);
 }
 
 export function stopEngine() {
@@ -63,6 +78,7 @@ export function stopEngine() {
   nodes.drone.releaseAll();
   Tone.Transport.stop();
   layers?.reset();
+  instruments?.silence();
   running = false;
 }
 

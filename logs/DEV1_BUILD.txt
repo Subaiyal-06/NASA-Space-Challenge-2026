@@ -4,3 +4,4 @@ S2 | sample data + loader + check script | Node, Vite glob import | data/cities/
 S5 | audio foundation + API | Tone.js | src/audio/engine.js, index.js, src/dev/AudioTest.jsx, audio-test.html | builds, dev server serves test page; drone NOT yet heard by ear
 S6 | tension layers + A minor scale + chord loops | Tone.js | src/audio/scale.js, layers.js, engine.js, tests/check-scale.mjs | scale test passes, bundles ok; not yet heard by ear
 S12 (minimal) | NASA POWER pipeline Karachi+Lahore | Python stdlib | pipeline/*.py, data/cities/karachi.json, lahore.json | check-data passes; Karachi Jul-2022 = 400 mm vs normal 43 mm. Lahore temp shows cooling since ~2016 (POWER model data, cross-check later)
+S7 | data instruments | Tone.js | src/audio/mapping.js, instruments.js, engine.js, layers.js, index.js, tests/check-mapping.mjs | mapping test passes (Jul 2022 = 12 rain notes vs Jul 1987 far fewer); not yet heard by ear

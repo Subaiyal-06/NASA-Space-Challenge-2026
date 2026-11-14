@@ -45,6 +45,7 @@ export function buildLayers(out, reverb) {
 
   // ---- state ----
   let tension = 0;
+  let bright = 0; // -1 (cooler than normal) .. +1 (much warmer): brighter filters, higher arpeggio
   let bar = 0;
   let step = 0;
   let chord = chordMidi("Am");
@@ -55,17 +56,18 @@ export function buildLayers(out, reverb) {
     tension = clamp01(t);
     const ramp = (param, v) => param.rampTo(v, BAR);
     ramp(padGain.gain, 0.35 + 0.35 * gate(tension, 0.4)); // soft pad always, louder "organ" from 0.4
-    ramp(padFilter.frequency, 500 + 1200 * gate(tension, 0.4));
+    const warm = Math.pow(2, bright); // 0.5x (cool) .. 2x (hot) on every filter cutoff
+    ramp(padFilter.frequency, (500 + 1200 * gate(tension, 0.4)) * warm);
     ramp(arpGain.gain, 0.9 * gate(tension, 0.2));
-    ramp(arpFilter.frequency, 900 + 5000 * tension); // brighter as tension grows
+    ramp(arpFilter.frequency, (900 + 5000 * tension) * warm); // brighter as tension and heat grow
     ramp(stringsGain.gain, 0.8 * gate(tension, 0.6));
-    ramp(stringsFilter.frequency, 800 + 3000 * tension);
+    ramp(stringsFilter.frequency, (800 + 3000 * tension) * warm);
     ramp(pulseGain.gain, 0.9 * gate(tension, 0.8));
     ramp(reverb.wet, 0.45 + 0.4 * gate(tension, 0.8, 0.2)); // biggest hall at the peak
   }
 
   const tense = () => tension >= 0.6;
-  const arpOctave = () => (tension >= 0.4 ? 12 : 0);
+  const arpOctave = () => (tension >= 0.4 ? 12 : 0) + (bright > 0.6 ? 12 : 0); // very warm = one more octave up
   const arpEvery = () => (tension >= 0.6 ? 1 : 2); // 16 notes per bar vs 8 (steps are 16ths)
 
   // ---- schedule on the Transport (one bar = one month) ----
@@ -99,6 +101,7 @@ export function buildLayers(out, reverb) {
 
   return {
     setTension,
+    setBrightness(b) { bright = Math.min(1, Math.max(-1, b)); setTension(tension); },
     reset() { // called on stop so the next start begins at bar 0
       bar = 0; step = 0; chord = chordMidi("Am");
       pad.releaseAll(); strings.releaseAll();
