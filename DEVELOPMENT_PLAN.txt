@@ -1,413 +1,410 @@
 EARTH JUKEBOX: PAKISTAN
-DEVELOPMENT PLAN (for two developers using Claude Code)
+DEVELOPMENT PLAN: THE APP CORE (two developers)
 =======================================================
 
-This file answers four questions:
-  1. What do WE do before any code is written?
-  2. How do we use Claude Code without following it blindly?
-  3. What are the build steps, in order, and what does Claude Code do in each?
-  4. How is the work split between Developer 1 and Developer 2?
-
-Companion files:
-  README.md              The product plan (features, data, music, team).
-  CLAUDE.md              Rules that Claude Code reads at the start of every session.
-  LEARNING_GUIDE.txt     Foundations, glossary, and answers to likely judge questions.
-  BUILD_LOG.txt          Decisions made so far and the "problem -> technology" table.
-  logs/DEV1_LEARNING.txt, logs/DEV2_LEARNING.txt
-                         Step-by-step lessons, written by Claude Code as it builds.
-  logs/DEV1_BUILD.txt,   logs/DEV2_BUILD.txt
-                         Step-by-step record of what was done, with which tech, and why.
-
-(Each developer has their own two log files so Git never has merge conflicts on them.)
+Companion files in the repo:
+  CLAUDE.md                 Rules for Member 1's tool (Claude Code), loaded automatically.
+  GEMINI.md                 Rules for Member 2's tool (Antigravity), loaded automatically.
+  MEMBER1_PLATFORM.md       Member 1's brief.
+  MEMBER2_APP_LOGIC.md      Member 2's brief.
+  README.md                 Product spec (trimmed, see Part 1).
+  docs/INTEGRATION.md       Handoff guide for teammates (generated in step C11).
+  logs/DEV1_BUILD.txt, logs/DEV2_BUILD.txt   One line per finished step.
 
 
 =======================================================
-PART 1: BEFORE ANY CODE (human steps, about 1-2 hours)
+PART 0: SCOPE (read this first)
 =======================================================
 
-1.1  Decide who is Developer 1 and who is Developer 2 (split in Part 4).
-     Tip: the person more comfortable with Python and data takes Developer 1.
+The whole project has 6 team members. THE TWO DEVELOPERS BUILD ONLY THE APP CORE.
 
-1.2  Re-read the official challenge page. Write down every required deliverable
-     (for example: submission form, video, project description, data list).
-     Also read the official rules about using AI tools, and plan how we will
-     disclose that we used Claude Code. Being open about this is the safe choice.
+WE BUILD (the code that makes the app run):
+  - Project setup, Electron desktop shell, packaging, installers, offline behavior
+  - The data layer: loading, checking and reading the city JSON files
+  - The global clock, Month/Year/Story modes, smart pacing, layer start-year gating
+  - App logic: events (stories, badges, quakes), ghost-weather trigger, compare logic,
+    app flow (intro -> city -> player -> compare), keyboard shortcuts, voice announcer logic,
+    settings (reduce motion, layers, and so on)
+  - The PLUG-IN SYSTEM: contracts, registry, placeholders, connectors, dev panel
+  - Integration of everything the teammates deliver, and testing it together
 
-1.3  Install the tools (each developer):
-       - Git
-       - Node.js (current LTS version) -- runs JavaScript outside a browser, gives us npm
-       - Python 3 -- for the data pipeline
-       - VS Code (or any editor)
-       - Claude Code
-     Check each one works: run "git --version", "node --version", "python --version".
+OTHERS DELIVER (we do NOT build these):
+  - MUSIC: the sound engine (one module that follows the audio contract)
+  - DATA: the finished city JSON files (and stories/records)
+  - UI/UX: designs and the visual components (globe, timeline look, weather animations,
+    ambient glow, charts, tension meter, story card, badges, compare view, styling)
 
-1.4  Create accounts:
-       - GitHub (one shared repository, both developers added)
-       - NASA Earthdata (free) -- needed for MERRA-2 and GPM IMERG downloads.
-         Do this FIRST. Approval can take a little time.
-
-1.5  Create the GitHub repo "earth-jukebox". Put these files in it:
-       README.md, CLAUDE.md, DEVELOPMENT_PLAN.txt, LEARNING_GUIDE.txt, BUILD_LOG.txt
-     Both developers clone it.
-
-1.6  Read LEARNING_GUIDE.txt Part 2B (Coding Foundations) and type the examples yourself.
-     Then learn the 10 words that matter most BEFORE building (all in LEARNING_GUIDE.txt):
-       component, state, JSON, Electron main vs renderer, anomaly, baseline,
-       sonification, Tone.js Transport, scale, tension index.
-     Read Part 1 and 2 of LEARNING_GUIDE.txt. It takes 30 minutes and saves hours.
-
-1.7  Agree on three "contracts" in writing (they let two people build in parallel):
-       a) The data format (README Section 7).
-       b) The clock API: what the global clock exposes (year, month, mode, playing, tension).
-       c) The audio API: start(), stop(), setMonth(year, month), setLayers([...]), setTension(x).
-     If these three are fixed, Developer 1 and Developer 2 can work without waiting for each other.
-
-1.8  Set the Git rules (both developers):
-       - "main" branch always works. Nobody breaks it.
-       - Developer 1 works on branch "dev1-engine", Developer 2 on "dev2-experience".
-       - Commit after EVERY finished step, with a clear message ("S5: drone and transport").
-       - Merge into main at each checkpoint (hours 12, 24, 36), not randomly.
-       - If both of you must edit one file, talk first.
+KEY DESIGN IDEA: the app must run END TO END with placeholders from day one. Teammates'
+work plugs in later through fixed contracts, without changing the core code.
 
 
 =======================================================
-PART 2: HOW TO USE CLAUDE CODE WITHOUT FOLLOWING IT BLINDLY
+PART 1: REPO HYGIENE (first thing, Member 1)
 =======================================================
 
-LATEST DECISION (overrides the lesson parts of this plan):
-  LEARNING HAPPENS AFTER THE HACKATHON, once the app is finished. During the build the
-  default mode is BUILD ONLY: no lessons, no learning files, no exercises. Each step
-  gets a 3-line plan, the build, and ONE line in the build log (logs/DEV1_BUILD.txt or
-  logs/DEV2_BUILD.txt). When the app is done, say "LEARN PHASE" (or "deep dive S6") and
-  the tool reads the code and the build log and writes the lessons then.
-  Wherever this plan mentions lessons, teach-back or learning logs during a step, treat it
-  as part of the LEARN PHASE.
-  Each member also has a brief: MEMBER1_ENGINE.md (Claude Code, rules in CLAUDE.md) and
-  MEMBER2_EXPERIENCE.md (Antigravity, rules in GEMINI.md).
+The GitHub repo contains ONLY code and development files. Everything else is deleted or
+never added.
 
-THE LOOP (repeat for every step; steps 6-7 happen only in the LEARN PHASE):
+KEEP in the repo:
+  - Source code (src/, electron/, tests/), package.json and lock file, config files
+  - CLAUDE.md, GEMINI.md, DEVELOPMENT_PLAN.txt, MEMBER1_PLATFORM.md, MEMBER2_APP_LOGIC.md
+  - README.md, TRIMMED to Sections 1, 2, 4, 5, 7 and 8 only
+  - docs/INTEGRATION.md
+  - logs/ (the one-line build logs)
+  - data/index.json and data/cities/*.json (only the files the app actually loads)
+  - Only the assets the app actually uses (final audio samples, fonts, images, outline file)
 
-  1. PLAN     Claude Code explains in plain English what it is about to do, which
-              files it will create or change, and why. (CLAUDE.md forces this.)
-  2. APPROVE  YOU read the plan. If you do not understand a part, ask:
-              "Explain this like I am new to it." Only then say go.
-              You approve once per step, not once per command.
-  3. BUILD    Claude Code does the step without interrupting you.
-  4. RUN      YOU run the app yourself and look at the result. Never trust "it works".
-  5. READ     Look at what changed:  git diff   (or the VS Code source control panel).
-              Skim every changed file. Ask about anything unclear.
-  6. TEACH    Claude Code appends a lesson to your learning file and an entry to your
-              build log (templates are in CLAUDE.md).
-  7. TEACH-BACK  Close the lesson. Explain the step out loud to your teammate (or write
-              3 sentences). If you cannot, ask Claude Code to re-explain.
-  8. COMMIT   git add, git commit with a clear message.
+REMOVE from the repo (move a copy to a folder OUTSIDE the repo first, then delete):
+  - LEARNING_GUIDE.txt and BUILD_LOG.txt (personal notes; keep them locally, not on GitHub)
+  - The old files MEMBER1_ENGINE.md and MEMBER2_EXPERIENCE.md (replaced by the two new briefs)
+  - README.md Sections 3, 6, 9, 10, 11, 12, 13, 14, 15 (differentiators, music guide, team,
+    timeline, demo and pitch, judging, risks, checklist, advice)
+  - Slides, pitch scripts, demo videos, screenshots and design files (Figma exports, mockups)
+  - Story drafts and research notes (only the final stories JSON stays)
+  - Music stems, loops, raw samples and unused sound files
+  - Raw NASA/USGS downloads and notebooks (they live with the data team)
+  - node_modules, build output, installers (publish installers as GitHub Releases, not in Git)
+  - Secrets (.env, passwords, tokens). Never commit them.
 
-SIX HABITS THAT TURN THIS INTO REAL LEARNING:
-  - Ask "What would break if I deleted this file or this line?" about code you do not get.
-  - Ask for "the smallest version first". Big changes are impossible to understand.
-  - Change one number yourself (for example the BPM, or a color) and watch what happens.
-    Every lesson has a "Try it yourself" section for this.
-  - Ask "What are two other ways to do this, and why did we not choose them?"
-  - If a step changes more than about 200 lines, ask Claude Code to split it.
-  - Keep a list "Things I do not understand yet" at the end of your learning file.
-  - WRITE IT YOURSELF (optional): when you have spare usage, say "challenge me" and Claude
-    Code gives you one small piece to write. Try it first, then compare. Do this at most
-    once per phase, not every step.
-  - After each step, rewrite the key function from memory. If you can, you understand it.
-  - Every lesson must walk through the real code line by line (what it does AND why).
-    If a lesson is only a story about the project, tell Claude Code: "Show me the code
-    and explain it line by line."
+HOW: (1) copy the unwanted files to a folder outside the repo, (2) git rm them,
+(3) add patterns to .gitignore (node_modules/, dist/, release/, .env, notes/, raw/),
+(4) commit "C0: repo hygiene". Note: old versions stay in Git history; if a secret was ever
+committed, change that secret.
 
-THE TEACHING-DEPTH DIAL:
-  Teaching costs time. Use it like this:
-    Hours 0-24 : full lessons (this is where the foundations are built).
-    Hours 24-42: SHORT lessons (5-10 lines each). Claude Code notes "deep dive later".
-    After the hackathon: read all lessons again and finish the deep dives.
-  Never skip the lesson completely. A short lesson is still a lesson.
-  The explanation of the KEY code is kept, but kept short (see APP FIRST below).
-
-APP FIRST, LEARNING SECOND (usage budget):
-  Priority 1 is a finished, working app. Priority 2 is learning. Lessons must never use
-  up your Claude limit and leave you with an unfinished app AND unfinished learning.
-  Three modes. Tell Claude Code which one to use:
-    LEAN (default): short plan (about 8 lines). After each step, a lesson of about
-        15-20 lines about only the 1-3 key pieces of logic (not boilerplate), plus a
-        5-6 line build-log entry.
-    FAST ("FAST MODE"): crunch time or low usage. One paragraph lesson, one-line log entry.
-    DEEP ("deep dive S6"): full lesson with line-by-line walkthrough and exercises. Ask for
-        it only when you have spare usage, ideally after the hackathon.
-  Rules of thumb:
-    - Bug fixes and small changes get one line in the log, no lesson.
-    - When time is tight, Claude Code adds one line to the LESSON QUEUE in your learning
-      file. You study the queue after the app is done.
-    - Reserve at least 30 percent of your usage for hours 36-48 (bug fixing, packaging, demo).
-    - Start a fresh Claude Code session for each step or phase. Long sessions get more
-      expensive because the whole conversation is re-read each time. CLAUDE.md reloads
-      automatically, so nothing is lost.
-    - Only the files you need are read: CLAUDE.md is loaded automatically; the README and
-      this plan are read only for the section that matches the current step.
-    - Finish app features in priority order (see README Section 8, the cutting plan).
-      Do the deep learning afterwards.
-  Learning is still happening: the key-logic lessons, the build log, and the teach-back
-  questions give you enough to answer judges. The deep dives make it complete later.
-
-STARTER PROMPT FOR THE FIRST CLAUDE CODE SESSION (paste this):
-  "Read CLAUDE.md, README.md and DEVELOPMENT_PLAN.txt. I am Developer 1 (or 2).
-   We are on Step S1. Follow the teaching rules in CLAUDE.md: explain first,
-   wait for my approval, then build, then update my learning and build logs."
+RULE FOR EVERYONE FROM NOW ON: before you add a file, ask "does the app need this to run,
+build or be developed?" If not, it does not go in the repo.
 
 
 =======================================================
-PART 3: THE BUILD STEPS
+PART 2: ARCHITECTURE (the plug-in design)
 =======================================================
 
-Each step shows: WHO, WHAT CLAUDE CODE DOES, WHAT YOU MUST UNDERSTAND,
-CHECKPOINT (how you know it works), TEACH-BACK QUESTION.
+  City JSON files  --->  DATA LAYER (src/data)  --->  snapshots per month
+                                                           |
+                      CLOCK (src/state)  ---- events ---->  CONNECTORS (src/app)
+                     year, month, mode,                       |            |
+                     pacing, tension                          v            v
+                                                  AUDIO ENGINE        UI SLOT COMPONENTS
+                                                  (teammate module)   (teammate components)
+                                                  via registry        via registry
+                                                  placeholder: NullAudio   placeholder: grey boxes
 
-FOLDER STRUCTURE (created over time):
+Rules of the design:
+  1. TEAMMATES' PARTS ARE PURE AND KNOW NOTHING ABOUT OUR STORE. UI components only receive
+     props. The audio engine only receives plain data (snapshots). This lets teammates build
+     and test them on their own.
+  2. CONNECTORS (our code) read the clock and the data layer and pass props to the slots.
+  3. THE REGISTRY (src/integrations/index.js) is the ONLY place that decides what is plugged
+     in. Plugging in a real module = one import and one line.
+  4. PLACEHOLDERS exist for every slot and for audio, so the app always runs.
+  5. Each slot is wrapped in an ERROR BOUNDARY: if a plugged-in module crashes, the app falls
+     back to the placeholder and shows a warning in the dev panel instead of crashing.
+  6. CONTRACT VALIDATORS check teammates' modules and data loudly and clearly.
+  7. ADAPTERS let us fix small differences in the data format without editing the data.
+
+
+=======================================================
+PART 3: THE CONTRACTS
+=======================================================
+
+Written as code in src/contracts/ (JSDoc types plus validator functions). Summary here.
+Changing a contract needs BOTH developers to agree, and the teammate affected must be told.
+
+--- 3.1 DATA CONTRACT (the data team delivers) ---
+  - data/index.json lists cities: [{ id, name, lat, lon, file }].
+  - data/cities/<id>.json follows README Section 7 (layers with monthly arrays, normals,
+    startYear and source per layer; earthquakes; tension; interest; baseline; records;
+    projection). A "schemaVersion" field is optional (default 1).
+  - Missing optional parts (tension, interest, baseline, records, projection) are allowed:
+    src/data/derived.js computes fallbacks from the raw layers using the README formulas,
+    and the data team's values always win when present.
+  - Check with: npm run check-data  (clear error messages, exits with an error if broken).
+
+--- 3.2 DATA API (Member 1 builds; the app uses it; never read JSON directly elsewhere) ---
+  getCityList()                          -> [{ id, name, lat, lon }]
+  loadCity(id)                           -> Promise<City>
+  getRange(city, scenario?)              -> { startYear, endYear, layerStartYears }
+  getSnapshot(city, year, month)         -> {
+        year, month, isProjection,
+        layers: {
+          temperature: { available, anomaly, value },
+          rainfall:    { available, percentile, value },
+          drought:     { available, spi },
+          air:         { available, aod },
+          quakes:      [ { magnitude, depth, lat, lon } ]
+        },
+        tension, interest }
+  getBaselineSnapshot(city, month)       -> same shape, 1981-1990 average for that month
+  getSeries(city, layer, fromYear, toYear) -> array of { year, month, value }
+  getMarkers(city)                       -> { stories: [...], badges: [...] }
+
+--- 3.3 CLOCK API (Member 2 builds in src/state/clock.js) ---
+  state:   year, month (0-11), mode ("month" | "year" | "story"), playing, speed (1,2,4),
+           pacing ("normal" | "skipping"), tension, interest, cityA, cityB (or null),
+           scenario, futureEnabled, layers (enabled list)
+  actions: play, pause, toggle, stepMonth(dir), setYear, setMonth, seek(year, month),
+           leap(years), setMode, setSpeed, selectCity(id, "A" | "B"), setLayers
+  events:  tick, story, badge, quake, pacing, calm, cityChange   (subscribe with clock.on)
+  Timing:  one month = 2.5 seconds in Month Mode; Year Mode about 2 s per year; Story Mode
+           uses smart pacing (README Feature 6B).
+
+--- 3.4 AUDIO CONTRACT (the music teammate delivers a module) ---
+  Module default-exports a factory: createAudioEngine() -> engine
+  engine methods:
+    REQUIRED  start()            async, called from a user click
+              stop()
+              setMonth(payload)  payload = { year, month, mode, tension, interest,
+                                             snapshotA, snapshotB|null }
+              setLayers(ids)     ids from: "temperature","rainfall","drought","quakes","air"
+              setMode(mode)      "month" | "year" | "story"
+              setPacing(state)   "normal" | "skipping" (skipping: hold drone, soft riser)
+              setMuted(bool)
+    OPTIONAL  setCity(city), setCompare(cityOrNull), setTension(x) (for a test slider), dispose()
+  The engine never reads our store or the JSON files. It only uses what it is given.
+  Placeholder: NullAudio (logs every call and keeps a call log shown in the dev panel).
+
+--- 3.5 UI SLOT CONTRACT (UI/UX teammates deliver pure React components) ---
+  Each slot is a default-exported component receiving ONLY props. Our connectors fill them.
+  GlobeIntro     { cities, onStart, onSelectCity(id), reduceMotion }
+  Timeline       { year, month, startYear, endYear, mode, playing, speed, pacing,
+                   markers, onToggle, onStep(dir), onSeek(year, month), onLeap(years),
+                   onModeChange(mode), onSpeedChange(speed) }
+  WeatherLayer   { cityId, selected, year, month, conditions, ghost, reduceMotion }
+                   conditions = { heatAnomaly, rainPercentile, spi, aod, quake|null }
+                   ghost = null | { heatAnomaly, rainPercentile, spi, aod }  (baseline values)
+  AmbientGlow    { states: [{ type, strength }], side: "both"|"left"|"right",
+                   beatPhase, reduceMotion }
+  Charts         { series, year, month, layers, mode }
+  TensionMeter   { tension, interest }
+  LayerToggles   { layers: [{ id, label, available, reason, enabled }], onToggle(id) }
+  StoryCard      { story|null, onClose }
+  BadgeToast     { badge|null }
+  CompareView    { cityA, cityB, summary, changeSince, startYear, onStartYearChange }
+  Legend         { layers, explanation }
+  Every slot also receives { reduceMotion }. Styling and animation are entirely the UI team's.
+  Placeholder: a grey box that prints the slot name and its props as JSON. This also shows the
+  UI team the exact props they get.
+
+--- 3.6 INTEGRATION FILES ---
+  src/integrations/audio/       Teammate's audio module goes here.
+  src/integrations/ui/          Teammate's components go here (one file per slot).
+  src/integrations/index.js     The registry. Example:
+        export default {
+          audio: null,                 // null = NullAudio placeholder
+          ui: { GlobeIntro: null, Timeline: null, ... }   // null = placeholder
+        };
+  A teammate module may list extra libraries in a DEPENDENCIES.txt next to it. Member 1 installs
+  them at integration time. The core installs only: react, vite, electron, electron-builder,
+  zustand (and test tooling).
+
+
+=======================================================
+PART 4: THE STEPS
+=======================================================
+
+IDs start with C (core). Owners in brackets. BUILD ONLY mode: each step gets a 3-line plan,
+the build, and one line in the build log (see the member files).
+
+C0  Repo hygiene                                   [Member 1]
+    Do Part 1: remove unrelated files, set .gitignore, trim README.
+    Done when: git status is clean and the repo has only keep-list files.
+
+C1  Scaffold                                       [Member 1]
+    Vite + React + Electron window, core dependencies only, folder structure with placeholder
+    files (see Part 5), npm scripts (dev, build, test, check-data), logs/ folder.
+    Done when: "npm run dev" opens a desktop window. Push to main.
+
+C2  Sample data and data layer basics              [Member 1]
+    data/index.json, a hand-made sample city file (karachi.sample.json) in the contract format,
+    loader, getCityList, loadCity, getSnapshot. Push to main so Member 2 can start.
+    Done when: getSnapshot("karachi", 1981, 5) returns the agreed shape.
+
+C3  Contracts, registry, placeholders              [Member 1]
+    src/contracts/ (types and validators), src/integrations/index.js, one placeholder per UI
+    slot, NullAudio, slot error boundary (SlotHost), settings store (reduceMotion, layers,
+    showGhostAlways, voiceAnnouncer, muted) with simple persistence.
+    Done when: the app renders every slot as a placeholder and audio calls appear in a log.
+
+C4  Global clock                                   [Member 2]
+    Zustand store per Contract 3.3: month ticking at 2.5 s, play/pause/step/seek/leap, modes,
+    speed, range from getRange, unit tests.
+    Done when: the console shows the month advancing every 2.5 s; pause works; tests pass.
+
+C5  Data tooling                                   [Member 1]
+    Validator and "npm run check-data", adapters folder, derived-values fallbacks (tension,
+    interest, baseline, records), getBaselineSnapshot, getSeries, getMarkers, getRange.
+    Done when: broken files fail with clear messages; a file without tension still works.
+
+C6  Pacing, gating, future                         [Member 2]
+    Smart pacing in Story Mode (calm stretches of 3+ months compressed to about 1 s per month,
+    pacing events), Year Mode, layer start-year gating (available flags), future years and
+    scenario switch, calm detection (2+ calm months) for ghost.
+    Done when: unit tests cover pacing and gating; Story Mode skips a calm stretch.
+
+C7  Events and derived props                       [Member 2]
+    Story and badge events when the playhead reaches them; quake events; builders that turn a
+    snapshot into the props for WeatherLayer (conditions + ghost), AmbientGlow (states and
+    strengths, blended), TensionMeter and Legend; "What am I hearing" text generator.
+    Done when: unit tests; the dev panel shows the events and prop objects.
+
+C8  Connectors and app composition                 [Member 2]
+    One connector per slot (reads clock, data and settings; passes props; wraps in SlotHost),
+    App.jsx composes the screens with placeholders: intro, player, compare.
+    Done when: the whole app runs end to end with placeholders; audio calls follow the clock.
+
+C9  Flow, compare, keyboard, announcer             [Member 2]
+    App flow state (intro -> city -> player -> compare), compare logic (change since, summary
+    sentence, left/right stereo flags), keyboard shortcuts (Space, arrows, up/down), voice
+    announcer service (text via speech synthesis, on/off setting), reduce-motion handling
+    (system setting plus toggle).
+    Done when: the app is usable with the keyboard; compare summary text is correct on sample data.
+
+C10 Dev panel and contract tests                   [Member 1]
+    /dev page (plain, unstyled): clock controls, city selector, tension override slider,
+    buttons that fire quake/story/badge events, call log for audio, list of which slots are
+    real or placeholder, and a "contract test" that renders each slot with sample props and
+    calls each audio method, reporting pass or fail with clear messages.
+    Done when: it reports pass for the placeholders.
+
+C11 Handoff guide                                  [Member 1]
+    Generate docs/INTEGRATION.md for teammates from the contracts: what to deliver, folder,
+    exact props and methods, how to test on their own, where to send it. Share it with them.
+
+C12 Integration of delivered work                  [Member 1: data and audio; Member 2: UI]
+    For each delivery follow Part 6. Never edit a teammate's data or components by hand to fix
+    contract differences: use an adapter or report the difference to them.
+
+C13 Packaging and offline                          [Member 1]
+    electron-builder installers for your laptops' systems, a ZIP, data bundled inside,
+    audio autoplay flag in Electron, offline test. First test build early (by hour 24)
+    even with placeholders.
+    Done when: installed on another laptop and the app runs with Wi-Fi off.
+
+C14 Web backup build (optional)                    [Member 1]
+    A hosted web build of the same code as a backup link for judges.
+
+C15 Polish and demo run                            [Both]
+    Bug fixing, performance check, a full run-through of the demo flow.
+
+
+=======================================================
+PART 5: FOLDER STRUCTURE AND OWNERSHIP
+=======================================================
 
   earth-jukebox/
-    CLAUDE.md, README.md, DEVELOPMENT_PLAN.txt, LEARNING_GUIDE.txt, BUILD_LOG.txt
-    logs/                   Per-developer learning and build logs
-    electron/               main.js, preload.js (the desktop shell)
+    CLAUDE.md  GEMINI.md  DEVELOPMENT_PLAN.txt  MEMBER1_PLATFORM.md  MEMBER2_APP_LOGIC.md  README.md
+    docs/INTEGRATION.md                                   [Member 1]
+    logs/                                                 [each member's own file]
+    electron/ (main.js, preload.js)                       [Member 1]
+    data/ (index.json, cities/*.json)                     [Member 1 for samples; data team for real files]
+    tests/                                                [owner of the code under test]
     src/
-      main.jsx, App.jsx     Entry point and root screen
-      state/clock.js        The global clock (single source of truth)
-      data/loader.js        Loads and checks the JSON files
-      audio/                Music engine (engine, scale, layers, instruments)
-      map/                  Globe, city markers
-      weather/              Sun, Rain, Haze, QuakeRipple, AmbientGlow, ghost versions
-      ui/                   Timeline, Charts, TensionMeter, StoryCard, Compare, Badges
-    data/cities/*.json      One file per city (made by the pipeline)
-    data/stories.json
-    pipeline/               Python scripts that make the JSON from NASA/USGS data
-    tests/                  Scripts that check the data and the clock logic
+      main.jsx                                            [Member 1]
+      App.jsx                                             [Member 2]
+      contracts/                                          [Member 1]
+      integrations/ (index.js, audio/, ui/)               [Member 1]
+      slots/ (placeholders, SlotHost)                     [Member 1]
+      data/ (api, loader, adapters, derived, validate)    [Member 1]
+      settings/                                           [Member 1]
+      dev/ (DevPanel, ContractTests)                      [Member 1]
+      state/ (clock, pacing, events)                      [Member 2]
+      app/ (connectors/, flow, compare, keyboard, announcer)  [Member 2]
 
--------------------------------------------------------
-S1  PROJECT SCAFFOLD                         [Both, together]
--------------------------------------------------------
-  Claude Code: creates the project with Vite + React, adds Electron, makes an
-  empty desktop window that shows "Earth Jukebox", adds npm scripts to run it,
-  creates the folders and the logs/ files from the templates.
-  You must understand: what Node and npm are; what Vite does (fast dev server);
-  what Electron's "main process" and "renderer" are; what package.json is.
-  Checkpoint: "npm run dev" (or the script we choose) opens a desktop window.
-  Teach-back: "Why do we need both Vite and Electron?"
-
--------------------------------------------------------
-S2  DATA CONTRACT, SAMPLE DATA AND LOADER    [Both, together; Dev 1 leads]
--------------------------------------------------------
-  Claude Code: writes a small FAKE city file (karachi.sample.json) in the agreed
-  format, a loader that reads it, and a check script that fails loudly if a
-  file breaks the format.
-  You must understand: JSON; why fake data first (nobody waits for NASA downloads);
-  what a "schema" or "contract" is; why months are arrays of 12 numbers.
-  Checkpoint: the check script passes on the sample and fails if you break the file on purpose.
-  Teach-back: "What is in one city file and who produces each part?"
-
--------------------------------------------------------
-S3  THE GLOBAL CLOCK                         [Both, together; Dev 2 leads]
--------------------------------------------------------
-  Claude Code: builds the clock with Zustand: year, month, mode (Month, Year,
-  Story), playing, speed, tension; a timer that moves time forward (2.5 s per month);
-  play, pause, step, jump, and a small test file for the logic.
-  You must understand: "state"; why ONE clock drives audio, graphs, map and glow;
-  timers and drift (why a naive timer slowly goes out of sync).
-  Checkpoint: console logs show the month advancing every 2.5 seconds; pause works.
-  Teach-back: "Why not let each part keep its own time?"
-
->>> From here the work is split. Dev 1 = ENGINE track. Dev 2 = EXPERIENCE track. <<<
-
--------------------------------------------------------
-S4  TIMELINE PLAYER UI                       [Dev 2]
--------------------------------------------------------
-  Claude Code: play/pause, step buttons, scrubber, mode switch, speed, keyboard
-  shortcuts, leap buttons (5 and 10 years). All read and write the clock only.
-  You must understand: React components, props, events, "controlled" inputs.
-  Checkpoint: dragging the scrubber changes the year shown; Space toggles play.
-  Teach-back: "What happens, step by step, when I press Space?"
-
--------------------------------------------------------
-S5  AUDIO FOUNDATION                         [Dev 1]
--------------------------------------------------------
-  Claude Code: a Start button (browsers and Electron may block audio until a user
-  action), Tone.js setup, Transport at 96 BPM, a low drone through reverb and a
-  limiter, and the audio API with stub functions.
-  You must understand: Web Audio basics; Tone.js Transport (a musical clock);
-  BPM (96 BPM x 4 beats = 2.5 s per bar = 1 month); reverb; limiter.
-  Checkpoint: press Start and hear a steady drone; stop silences it.
-  Teach-back: "Why does one bar equal one month?"
-
--------------------------------------------------------
-S6  MUSIC LAYERS AND THE TENSION INDEX       [Dev 1]
--------------------------------------------------------
-  Claude Code: the scale (A minor) and a function that forces every note onto it;
-  the chord loop (Am F C G, and the tense loop Am F Dm E); arpeggio, pad, strings and
-  pulse layers; setTension(x) fades layers in and out smoothly per README Section 6.4.
-  You must understand: scale, chord, arpeggio, "quantize to scale", interpolation
-  (smooth change), why layers enter at thresholds.
-  Checkpoint: a slider from 0 to 1 (temporary test control) makes the music build.
-  Teach-back: "What exactly changes when tension goes from 0.3 to 0.7?"
-
--------------------------------------------------------
-S7  DATA INSTRUMENTS                         [Dev 1]
--------------------------------------------------------
-  Claude Code: rain notes and rain noise, earthquake boom, drought filter, haze
-  noise, temperature brightness; setMonth(year, month) reads a city file and drives them;
-  the "orchestra grows" rule (silent before a layer's start year).
-  You must understand: normalizing values to 0-1; mapping data to sound; why
-  anomalies (not raw values) drive the sound.
-  Checkpoint: with sample data, 1981 -> 2022 sounds clearly different.
-  Teach-back: "How does a rainfall number become a sound?"
-
--------------------------------------------------------
-S8  GLOBE INTRO AND CITY MARKERS             [Dev 2]
--------------------------------------------------------
-  Claude Code: MapLibre globe, slow rotation, Start button, camera fly-in to
-  Pakistan, markers that pop up one by one, click selects a city and loads its file;
-  an offline fallback using a local Pakistan outline.
-  You must understand: map projections (globe vs flat), tiles, markers as HTML
-  elements, camera animation; what the fallback is for.
-  Checkpoint: Earth zooms in; Karachi marker click loads the sample city.
-  Teach-back: "What happens if the internet is off during the demo?"
-
--------------------------------------------------------
-S9  WEATHER COMPONENTS, AMBIENT GLOW, GHOST  [Dev 2]
--------------------------------------------------------
-  Claude Code: Sun, Rain, Haze, QuakeRipple components that take ONE value (compared
-  to normal) and draw the matching effect; ghost versions (faint, dashed); the ambient
-  edge glow layer with color blending, pulse once per bar, safe lightning and
-  a Reduce Motion toggle.
-  You must understand: CSS animations vs canvas; why values are "compared to normal";
-  CSS variables; accessibility of motion.
-  Checkpoint: a test page with sliders shows every effect at several intensities.
-  Teach-back: "Why does the sun not just appear every summer?"
-
--------------------------------------------------------
-S10 CHARTS, TENSION METER, "SOUND MEETS DATA" [Dev 2]
--------------------------------------------------------
-  Claude Code: line charts with a moving cursor, earthquake bars, temperature
-  gauge, the tension meter, a legend, and a "What am I hearing?" button.
-  You must understand: how a chart library reads data; how the cursor follows the clock.
-  Checkpoint: playing the timeline moves cursors in step with the sound.
-  Teach-back: "Where do the charts get the current time from?"
-
--------------------------------------------------------
-S11 COMPARE TWO CITIES                       [Dev 2 UI + Dev 1 audio]
--------------------------------------------------------
-  Claude Code: Dev 1 adds a second engine voice set panned left (City A) and right
-  (City B); Dev 2 adds side-by-side view, "Change Since" summary, left/right glow.
-  You must understand: stereo panning; computing a change between two periods.
-  Checkpoint: headphones test: City A in the left ear, City B in the right.
-  Teach-back: "How do we compute 'warmed faster than Lahore'?"
-
--------------------------------------------------------
-S12 REAL DATA PIPELINE (PYTHON)              [Dev 1, runs in parallel from the start]
--------------------------------------------------------
-  Claude Code: scripts that fetch and process NASA POWER (start here, no login),
-  GISTEMP, MERRA-2, GPM IMERG (if needed), USGS earthquakes; compute monthly values,
-  normals, baseline (1981-1990), drought index (SPI), tension, interest score,
-  records; write data/cities/*.json; run the check script.
-  You must understand: NetCDF files; what an anomaly and a baseline are; SPI; why we
-  pre-process offline; how each dataset starts in a different year.
-  Checkpoint: Karachi JSON shows a clear rain spike in 2022 and the 2005 quake;
-  the check script passes.
-  Teach-back: "Which dataset feeds which sound, and from what year?"
-  NOTE: if other teammates already handle the data, Dev 1 only reviews their files
-  against the check script and the README table. If nobody does, start with
-  2 cities and POWER only, then grow.
-
--------------------------------------------------------
-S13 STORIES, BADGES, SMART PACING            [Dev 2 UI + Dev 1 logic]
--------------------------------------------------------
-  Claude Code: story markers and cards; record badges; Smart Pacing in the clock
-  (compress calm stretches of 3+ months in Story Mode); the "skipped months" music
-  behavior (drone plus soft riser, restart on the bar line); ghost weather trigger
-  from the interest score.
-  You must understand: the interest score; why the tempo never changes while skipping.
-  Checkpoint: Story Mode skips a calm stretch smoothly and slows at the 2022 flood.
-  Teach-back: "How does the app decide a month is calm?"
-
--------------------------------------------------------
-S14 FUTURE LISTENING (2050 AND 2100)         [Dev 1 data + Dev 2 UI]
--------------------------------------------------------
-  Claude Code: projection data from NEX-GDDP-CMIP6 for each city; a scenario switch;
-  clear "Projection, not measurement" styling.
-  You must understand: scenarios (SSP), why projections are not predictions.
-  Checkpoint: tension climbs in future years; label always visible.
-  Teach-back: "Why are there two scenarios?"
-
--------------------------------------------------------
-S15 ACCESSIBILITY                            [Dev 2]
--------------------------------------------------------
-  Claude Code: keyboard access, labels, visible focus, high contrast, voice announcer,
-  Reduce Motion everywhere; test with a screen reader.
-  Checkpoint: the whole app can be used without a mouse.
-  Teach-back: "What does the voice announcer say at March 1985?"
-
--------------------------------------------------------
-S16 PACKAGING                                [Dev 1, first test build by hour 24]
--------------------------------------------------------
-  Claude Code: electron-builder setup, installers for your laptops' systems,
-  a ZIP version, data bundled inside, audio autoplay setting, the offline test.
-  You must understand: what an installer contains; why unsigned apps show warnings.
-  Checkpoint: install on a second laptop and run with Wi-Fi off.
-  Teach-back: "What is inside the installed app?"
-
--------------------------------------------------------
-S17 POLISH, BACKUP BUILD, DEMO                [Both]
--------------------------------------------------------
-  Claude Code: bug fixes, performance checks, a hosted web build of the same code as
-  a backup link, demo mode shortcuts.
-  You: record the demo video, rehearse, finish the learning logs, update README.
-  Checkpoint: full run-through of the 2-minute demo without a single error.
+Whoever does not own a folder asks first before editing it.
 
 
 =======================================================
-PART 4: HOW THE WORK IS SPLIT
+PART 6: HOW TO INTEGRATE WHAT TEAMMATES DELIVER
 =======================================================
 
-DEVELOPER 1: ENGINE TRACK (data and sound)
-  Owns: pipeline/, src/audio/, src/data/, tests/, electron packaging (S16)
-  Steps: S2 (lead), S5, S6, S7, S12, S11 (audio part), S13 (logic), S14 (data), S16
-  Branch: dev1-engine
+DATA (from the data team)
+  1. Put the files in data/ (index.json and cities/*.json).
+  2. Run: npm run check-data.
+  3. If the shape differs slightly, add an adapter in src/data/adapters/ (do not edit their files).
+  4. If something is wrong with the data itself, report it to the data team with the error text.
+  5. Run the app: open the dev panel and step through a few years.
 
-DEVELOPER 2: EXPERIENCE TRACK (what people see and touch)
-  Owns: src/state/clock.js (after S3), src/map/, src/weather/, src/ui/, accessibility
-  Steps: S3 (lead), S4, S8, S9, S10, S11 (UI part), S13 (UI), S14 (UI), S15
-  Branch: dev2-experience
+MUSIC (from the music teammate)
+  1. Put the module in src/integrations/audio/ (entry file default-exports createAudioEngine).
+  2. Install anything listed in its DEPENDENCIES.txt.
+  3. In src/integrations/index.js set audio to the factory.
+  4. Open /dev and run the contract test: every required method must run without errors.
+  5. Click Start, play a few months, test skipping (setPacing), compare (second city) and mute.
+  6. Report problems to the music teammate with the message from the dev panel.
 
-STARTUP SEQUENCE (replaces the old "both together" idea; avoids conflicting files):
-  1. Member 1 does S1 alone: scaffold, install ALL planned dependencies at once, create all
-     folders with placeholder files, .gitignore, logs/. Push to main. (about 30-60 min)
-  2. Member 1 adds the S2 minimum (sample city JSON + loader). Push to main. (about 30 min)
-  3. Member 2 pulls main, creates branch dev2-experience, and starts S3 (clock) and S4.
-     Member 1 continues with the S2 check script, then S5 audio.
-  4. Conflict rules: only Member 2 edits src/App.jsx; Member 1 tests audio on
-     src/dev/AudioTest.jsx. Package changes are committed alone, merged to main at once,
-     and announced. Everyone runs "git pull origin main" before each step.
-  5. While waiting, Member 2 prepares non-code work: tools, screen sketches, palette, Pakistan
-     outline, city list, story cards.
-  Where Part 3 says "[Both, together]" for S1-S3, follow this sequence instead.
-  S17 (polish and demo) is done by both at the end.
+UI/UX (from the UI teammates)
+  1. Put each component in src/integrations/ui/ (one file per slot, default export).
+  2. Install anything listed in DEPENDENCIES.txt.
+  3. Register it in src/integrations/index.js, one slot at a time.
+  4. Open /dev and run the contract test: the slot must render with the sample props.
+  5. Check it in the real flow. If it crashes, the placeholder returns and the dev panel says why.
+  6. Visual quality is the UI team's job; we only check that it fits the contract.
 
-WHY THIS SPLIT WORKS: the two tracks only touch at three places (the data format,
-the clock, the audio API). Those are fixed in Part 1.7, so each person can work with
-fake or stub versions of the other's part.
+RULE: plug in ONE thing at a time, run the app, commit. If something breaks, remove that one
+line from the registry and the app works again.
 
-INTEGRATION CHECKPOINTS (merge into main, then both run the app together)
-  Hour 12 : sample data + clock + audio drone + globe all run together.
-  Hour 24 : full demo loop works with real data for 2 cities; first installer built.
-  Hour 36 : all features in; start bug fixing only.
+
+=======================================================
+PART 7: MESSAGE TO TEAMMATES (paste into your group chat)
+=======================================================
+
+  "We are building the app core. You deliver your part as a standalone module that follows
+   the contract; we plug it in.
+   - Music: one module with createAudioEngine() and the methods in docs/INTEGRATION.md.
+   - Data: the JSON files in the agreed format. Run the check script before you send.
+   - UI/UX: pure React components, one per slot, receiving only props (no global state).
+   Do not send slides, videos, drafts or raw files to the code repo. Send only the final module
+   files. List any extra libraries in a DEPENDENCIES.txt. docs/INTEGRATION.md has the exact
+   props and methods. You can test your piece alone with the sample data and placeholders."
+
+
+=======================================================
+PART 8: SCHEDULE AND CHECKPOINTS
+=======================================================
+
+STARTUP ORDER (avoids conflicting files)
+  1. Member 1: C0, C1, C2. Push to main. (about 1-1.5 h) Tell Member 2.
+  2. Member 2: pulls main, creates branch dev2-app-logic, starts C4.
+     Member 1: C3, then C5.
+  3. Member 2 starts C8 (connectors) as soon as Member 1 pushes C3 (contracts and placeholders).
+  Rules: package changes are committed alone, merged to main at once and announced. Everyone
+  runs "git pull origin main" before each step. Only Member 2 edits App.jsx.
+
+  While waiting for C1/C2, Member 2 reads README Sections 2, 4 and 7 and this plan, and installs
+  Git, Node.js and Antigravity.
+
+CHECKPOINTS (merge to main, both run the app)
+  Hour 12 : app runs end to end with placeholders, clock works, dev panel works.
+  Hour 24 : first teammate modules plugged in (data for 2 cities, first music version);
+            first installer built.
+  Hour 36 : everything plugged in; bug fixing only.
   Hour 40 : feature freeze.
 
-HOW TO GROW FROM TWO DEVELOPERS TO THE FULL TEAM
-  The other teammates can take: story texts, slide deck, demo video, testing with
-  outsiders ("does 2022 sound more tense than 1985?"), and the data research table.
-  If a teammate is strong in Python, hand them S12 so Dev 1 can focus on sound.
+CUTTING PLAN (cut from the top first)
+  1. Web backup build (C14)
+  2. Voice announcer
+  3. Future years and scenario switch
+  4. Badge events
+  5. Compare summary sentence (keep the numbers)
+  NEVER CUT: scaffold, data layer, contracts and registry, placeholders, clock, connectors,
+  packaging, dev panel.
 
-WHAT TO DO WHEN YOU ARE STUCK
-  1. Ask Claude Code to explain the error in plain words before fixing it.
-  2. Ask what the error means, then what the cause is, then what the options are.
-  3. If a fix touches many files, stop and ask for the smallest fix first.
-  4. Write the problem and the solution into the build log. It becomes a judge answer.
+
+=======================================================
+PART 9: GIT RULES
+=======================================================
+
+  - "main" always works. Member 1 works on branch dev1-platform, Member 2 on dev2-app-logic.
+  - Commit after every finished step: "C4: global clock".
+  - Merge into main at checkpoints and after each integration, after running the app.
+  - Never commit secrets, raw data, installers or personal notes.
+
+
+=======================================================
+PART 10: LEARNING (after the app is finished)
+=======================================================
+
+Learning is postponed until the app is done. During the build use BUILD ONLY mode (no lessons).
+When the app is finished, tell your tool "LEARN PHASE" or "deep dive C4". It then reads the
+code and the one-line build log and writes the lessons. Keep the lesson files OUTSIDE the repo
+(or in an ignored notes/ folder).

@@ -1,8 +1,9 @@
-node_modules
-dist
-release
+node_modules/
+dist/
+release/
 .env
-__pycache__
+notes/
+raw/
+.venv/
+__pycache__/
 *.pyc
-pipeline/raw/
-.venv
