@@ -1,2 +1,3 @@
 C4 | global clock | Zustand | src/state/clock.js, tests/clock.test.js | month ticks every 2.5s, contract + 6 unit tests pass
 C6 | pacing, gating, future | JS, Zustand | src/state/pacing.js, src/state/clock.js, tests/pacing.test.js | smart pacing in Story Mode, calm streak & layer gating tests pass
+C7 | events + derived prop builders | JS | src/state/events.js, src/app/propBuilders.js, tests/events-props.test.js | story/badge/quake events and WeatherLayer/AmbientGlow/TensionMeter/Legend prop builders pass

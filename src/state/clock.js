@@ -5,6 +5,7 @@ import { getLoadedCity } from "../data/loader.js";
 import { MONTH_SECONDS, CLOCK_EVENTS } from "../contracts/clock.js";
 import { LAYER_IDS } from "../contracts/audio.js";
 import { computePacing, getCalmStreak, isGhostCalmEligible } from "./pacing.js";
+import { findEventsAt } from "./events.js";
 
 const listeners = new Map(CLOCK_EVENTS.map((e) => [e, new Set()]));
 
@@ -119,6 +120,11 @@ function applyPlayheadUpdate(set, get, year, month, extra = {}) {
       ghostEligible: isGhostCalmEligible(cityId, year, month, activeScenario),
     });
   }
+
+  const { stories, badges, quakes } = findEventsAt(cityId, year, month, activeScenario);
+  for (const story of stories) emitClockEvent("story", story);
+  for (const badge of badges) emitClockEvent("badge", badge);
+  for (const quake of quakes) emitClockEvent("quake", quake);
 
   emitClockEvent("tick", { year, month, mode, tension, interest, pacing: nextPacing });
 }
