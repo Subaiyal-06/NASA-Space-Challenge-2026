@@ -1,0 +1,7 @@
+C4 | global clock | Zustand | src/state/clock.js, tests/clock.test.js | month ticks every 2.5s, contract + 6 unit tests pass
+C6 | pacing, gating, future | JS, Zustand | src/state/pacing.js, src/state/clock.js, tests/pacing.test.js | smart pacing in Story Mode, calm streak & layer gating tests pass
+C7 | events + derived prop builders | JS | src/state/events.js, src/app/propBuilders.js, tests/events-props.test.js | story/badge/quake events and WeatherLayer/AmbientGlow/TensionMeter/Legend prop builders pass
+C8 | slot connectors & App composition | React, Zustand | src/app/connectors.jsx, src/App.jsx, tests/app-connectors.test.jsx | all 11 slots connected via SlotHost with zero warnings
+C9 | app flow, compare, keyboard, announcer | JS, Zustand | src/app/flow.js, src/app/compare.js, src/app/keyboard.js, src/app/announcer.js | intro->player->compare flow, Change Since summary, shortcuts & speech announcer pass
+C8 | connectors + App.jsx composition | React, Zustand | src/app/connectors.jsx, src/app/flow.js, src/App.jsx | all 11 slots connected via SlotHost, audio bridge follows clock, 0 warnings
+C9 | flow, compare, keyboard, announcer | JS, React | src/app/compare.js, src/app/keyboard.js, src/app/announcer.js, tests/app-connectors.test.jsx | compare summary, Space/Arrow shortcuts, voice announcer, 54 tests pass
