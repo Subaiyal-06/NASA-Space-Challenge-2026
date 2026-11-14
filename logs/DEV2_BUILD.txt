@@ -1,0 +1,1 @@
+C4 | global clock | Zustand | src/state/clock.js, tests/clock.test.js | month ticks every 2.5s, contract + 6 unit tests pass
