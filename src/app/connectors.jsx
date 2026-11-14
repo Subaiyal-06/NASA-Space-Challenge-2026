@@ -1,4 +1,4 @@
-// CONNECTORS FOR ALL 11 UI SLOTS (Step C8)
+// CONNECTORS FOR ALL 11 UI SLOTS (Step C8 & C12)
 // Each connector reads from the clock, data API, and settings, builds pure props,
 // and wraps the slot in <SlotHost name="..." {...props} />.
 import React from "react";
@@ -17,7 +17,20 @@ import {
 } from "./propBuilders.js";
 import { buildCompareProps } from "./compare.js";
 
-export function GlobeIntroConnector({ override }) {
+// Delivered UI components (can be overridden per connector or toggled back to placeholder)
+import GlobeIntro from "../integrations/ui/GlobeIntro.jsx";
+import Timeline from "../integrations/ui/Timeline.jsx";
+import WeatherLayer from "../integrations/ui/WeatherLayer.jsx";
+import AmbientGlow from "../integrations/ui/AmbientGlow.jsx";
+import Charts from "../integrations/ui/Charts.jsx";
+import TensionMeter from "../integrations/ui/TensionMeter.jsx";
+import LayerToggles from "../integrations/ui/LayerToggles.jsx";
+import StoryCard from "../integrations/ui/StoryCard.jsx";
+import BadgeToast from "../integrations/ui/BadgeToast.jsx";
+import CompareView from "../integrations/ui/CompareView.jsx";
+import Legend from "../integrations/ui/Legend.jsx";
+
+export function GlobeIntroConnector({ override = GlobeIntro }) {
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const startExperience = useAppFlow((s) => s.startExperience);
   const selectCity = useClock((s) => s.selectCity);
@@ -38,7 +51,7 @@ export function GlobeIntroConnector({ override }) {
   );
 }
 
-export function TimelineConnector({ override }) {
+export function TimelineConnector({ override = Timeline }) {
   const {
     year,
     month,
@@ -87,7 +100,7 @@ export function TimelineConnector({ override }) {
   );
 }
 
-export function WeatherLayerConnector({ citySlot = "A", selected = true, override }) {
+export function WeatherLayerConnector({ citySlot = "A", selected = true, override = WeatherLayer }) {
   const { year, month, cityA, cityB, scenario, futureEnabled } = useClock();
   const { reduceMotion, showGhostAlways } = useSettings();
   const cityId = citySlot === "B" ? cityB : cityA;
@@ -106,7 +119,7 @@ export function WeatherLayerConnector({ citySlot = "A", selected = true, overrid
   return <SlotHost name="WeatherLayer" override={override} {...props} />;
 }
 
-export function AmbientGlowConnector({ side = "both", override }) {
+export function AmbientGlowConnector({ side = "both", override = AmbientGlow }) {
   const { year, month, cityA, cityB, scenario, futureEnabled } = useClock();
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const activeScenario = futureEnabled ? scenario : undefined;
@@ -126,7 +139,7 @@ export function AmbientGlowConnector({ side = "both", override }) {
   return <SlotHost name="AmbientGlow" override={override} {...props} />;
 }
 
-export function ChartsConnector({ override }) {
+export function ChartsConnector({ override = Charts }) {
   const { year, month, mode, cityA, layers, scenario, futureEnabled } = useClock();
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const cityObj = getLoadedCity(cityA);
@@ -158,7 +171,7 @@ export function ChartsConnector({ override }) {
   );
 }
 
-export function TensionMeterConnector({ override }) {
+export function TensionMeterConnector({ override = TensionMeter }) {
   const { tension, interest } = useClock();
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const props = buildTensionMeterProps({ tension, interest, reduceMotion });
@@ -166,7 +179,7 @@ export function TensionMeterConnector({ override }) {
   return <SlotHost name="TensionMeter" override={override} {...props} />;
 }
 
-export function LayerTogglesConnector({ override }) {
+export function LayerTogglesConnector({ override = LayerToggles }) {
   const { year, cityA, scenario, futureEnabled } = useClock();
   const { layers: enabledLayers, toggleLayer, reduceMotion } = useSettings();
   const activeScenario = futureEnabled ? scenario : undefined;
@@ -183,7 +196,7 @@ export function LayerTogglesConnector({ override }) {
   );
 }
 
-export function StoryCardConnector({ override }) {
+export function StoryCardConnector({ override = StoryCard }) {
   const activeStory = useAppFlow((s) => s.activeStory);
   const closeStory = useAppFlow((s) => s.closeStory);
   const reduceMotion = useSettings((s) => s.reduceMotion);
@@ -199,7 +212,7 @@ export function StoryCardConnector({ override }) {
   );
 }
 
-export function BadgeToastConnector({ override }) {
+export function BadgeToastConnector({ override = BadgeToast }) {
   const activeBadge = useAppFlow((s) => s.activeBadge);
   const reduceMotion = useSettings((s) => s.reduceMotion);
 
@@ -213,7 +226,7 @@ export function BadgeToastConnector({ override }) {
   );
 }
 
-export function CompareViewConnector({ override }) {
+export function CompareViewConnector({ override = CompareView }) {
   const { year, month, cityA, cityB, scenario, futureEnabled } = useClock();
   const compareStartYear = useAppFlow((s) => s.compareStartYear);
   const setCompareStartYear = useAppFlow((s) => s.setCompareStartYear);
@@ -234,7 +247,7 @@ export function CompareViewConnector({ override }) {
   return <SlotHost name="CompareView" override={override} {...props} />;
 }
 
-export function LegendConnector({ override }) {
+export function LegendConnector({ override = Legend }) {
   const { year, month, cityA, scenario, futureEnabled } = useClock();
   const { layers: enabledLayers, reduceMotion } = useSettings();
   const activeScenario = futureEnabled ? scenario : undefined;

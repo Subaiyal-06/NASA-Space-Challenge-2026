@@ -3,21 +3,59 @@ import { create } from "zustand";
 import { useClock } from "../state/clock.js";
 import { useSettings } from "../settings/index.js";
 import { createAudio } from "../integrations/resolve.js";
+import createAudioEngine from "../integrations/audio/index.js";
 import { getSnapshot, loadCity } from "../data/api.js";
 import { getLoadedCity } from "../data/loader.js";
 import { announceMonth } from "./announcer.js";
 
 let audioEngine = null;
 
+function createHybridAudioEngine() {
+  const base = createAudio();
+  if (!base.isNull) return base;
+  const real = createAudioEngine();
+  return {
+    ...real,
+    start(...args) {
+      base.start?.(...args);
+      return real.start(...args);
+    },
+    stop(...args) {
+      base.stop?.(...args);
+      return real.stop(...args);
+    },
+    setMonth(...args) {
+      base.setMonth?.(...args);
+      return real.setMonth(...args);
+    },
+    setLayers(...args) {
+      base.setLayers?.(...args);
+      return real.setLayers(...args);
+    },
+    setMode(...args) {
+      base.setMode?.(...args);
+      return real.setMode(...args);
+    },
+    setPacing(...args) {
+      base.setPacing?.(...args);
+      return real.setPacing(...args);
+    },
+    setMuted(...args) {
+      base.setMuted?.(...args);
+      return real.setMuted(...args);
+    },
+  };
+}
+
 export function getAudioEngine() {
   if (!audioEngine) {
-    audioEngine = createAudio();
+    audioEngine = createHybridAudioEngine();
   }
   return audioEngine;
 }
 
 export function resetAudioEngine() {
-  audioEngine = createAudio();
+  audioEngine = createHybridAudioEngine();
   return audioEngine;
 }
 

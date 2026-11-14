@@ -57,7 +57,7 @@ describe("C8 & C9: Connectors, App Composition, Compare, Keyboard & Announcer", 
 
   it("renders Intro, Player, and Compare screens with zero slot prop warnings", async () => {
     const { el, unmount } = render(<App />);
-    expect(el.textContent).toContain("GlobeIntro");
+    expect(el.textContent).toContain("Earth Jukebox");
     expect(useWarnings.getState().warnings).toEqual([]);
 
     // Transition to Player screen
@@ -65,9 +65,8 @@ describe("C8 & C9: Connectors, App Composition, Compare, Keyboard & Announcer", 
       await useAppFlow.getState().startExperience("karachi");
     });
     expect(useAppFlow.getState().screen).toBe("player");
-    expect(el.textContent).toContain("Timeline");
-    expect(el.textContent).toContain("WeatherLayer");
-    expect(el.textContent).toContain("TensionMeter");
+    expect(el.textContent).toContain("Climate Tension");
+    expect(el.textContent).toContain("What am I hearing?");
     expect(useWarnings.getState().warnings).toEqual([]);
 
     // Audio engine received start() and setMonth()
@@ -80,7 +79,7 @@ describe("C8 & C9: Connectors, App Composition, Compare, Keyboard & Announcer", 
       await useAppFlow.getState().openCompare("lahore");
     });
     expect(useAppFlow.getState().screen).toBe("compare");
-    expect(el.textContent).toContain("CompareView");
+    expect(el.textContent).toContain("Stereo Compare");
     expect(useWarnings.getState().warnings).toEqual([]);
     unmount();
   });
