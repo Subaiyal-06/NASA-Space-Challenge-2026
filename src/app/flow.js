@@ -46,6 +46,14 @@ export const useAppFlow = create((set, get) => ({
     syncAudioToClock();
   },
 
+  returnToIntro: () => {
+    useClock.getState().pause();
+    try {
+      getAudioEngine().stop();
+    } catch {}
+    set({ screen: "intro", audioStarted: false });
+  },
+
   openCompare: async (secondCityId = "lahore") => {
     if (secondCityId) {
       await loadCity(secondCityId);
@@ -137,6 +145,22 @@ export function initAppBridge() {
   bridgeUnsubscribers.push(
     useClock.on("badge", (badge) => {
       useAppFlow.getState().setActiveBadge(badge);
+    })
+  );
+
+  bridgeUnsubscribers.push(
+    useClock.subscribe((state, prevState) => {
+      if (state.playing !== prevState.playing) {
+        const engine = getAudioEngine();
+        if (state.playing) {
+          Promise.resolve(engine.start()).catch(() => {});
+          syncAudioToClock();
+        } else {
+          try {
+            engine.stop();
+          } catch {}
+        }
+      }
     })
   );
 
