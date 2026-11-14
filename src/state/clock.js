@@ -1,9 +1,10 @@
-// GLOBAL CLOCK STORE (Contract 3.3)
+// GLOBAL CLOCK STORE (Contract 3.3 + Step C6 Pacing & Calm Events)
 import { create } from "zustand";
 import { loadCity, getRange, getSnapshot } from "../data/api.js";
 import { getLoadedCity } from "../data/loader.js";
 import { MONTH_SECONDS, CLOCK_EVENTS } from "../contracts/clock.js";
 import { LAYER_IDS } from "../contracts/audio.js";
+import { computePacing, getCalmStreak, isGhostCalmEligible } from "./pacing.js";
 
 const listeners = new Map(CLOCK_EVENTS.map((e) => [e, new Set()]));
 
@@ -84,6 +85,44 @@ function scheduleNextTick(store) {
   }, ms);
 }
 
+function applyPlayheadUpdate(set, get, year, month, extra = {}) {
+  const s = get();
+  const cityId = extra.cityA ?? s.cityA;
+  const mode = extra.mode ?? s.mode;
+  const scenario = extra.scenario ?? s.scenario;
+  const futureEnabled = extra.futureEnabled ?? s.futureEnabled;
+  const activeScenario = futureEnabled ? scenario : undefined;
+
+  const { tension, interest } = safeMetrics(cityId, year, month, scenario, futureEnabled);
+  const nextPacing = computePacing(mode, cityId, year, month, activeScenario);
+  const prevPacing = s.pacing;
+
+  set({
+    ...extra,
+    year,
+    month,
+    tension,
+    interest,
+    pacing: nextPacing,
+  });
+
+  if (prevPacing !== nextPacing) {
+    emitClockEvent("pacing", { pacing: nextPacing, year, month });
+  }
+
+  const calmInfo = getCalmStreak(cityId, year, month, activeScenario);
+  if (calmInfo.streakEndingHere >= 2) {
+    emitClockEvent("calm", {
+      year,
+      month,
+      streak: calmInfo.streakEndingHere,
+      ghostEligible: isGhostCalmEligible(cityId, year, month, activeScenario),
+    });
+  }
+
+  emitClockEvent("tick", { year, month, mode, tension, interest, pacing: nextPacing });
+}
+
 export const useClock = create((set, get) => {
   const store = {
     // --- STATE ---
@@ -137,27 +176,20 @@ export const useClock = create((set, get) => {
 
       const year = Math.floor(totalMonths / 12);
       const month = ((totalMonths % 12) + 12) % 12;
-      const { tension, interest } = safeMetrics(s.cityA, year, month, s.scenario, s.futureEnabled);
-
-      set({ year, month, tension, interest });
-      emitClockEvent("tick", { year, month, mode: s.mode, tension, interest });
+      applyPlayheadUpdate(set, get, year, month);
     },
 
     setYear: (y) => {
       const s = get();
       const { startYear, endYear } = safeRange(s.cityA, s.scenario, s.futureEnabled);
       const year = Math.min(endYear, Math.max(startYear, Number(y)));
-      const { tension, interest } = safeMetrics(s.cityA, year, s.month, s.scenario, s.futureEnabled);
-      set({ year, tension, interest });
-      emitClockEvent("tick", { year, month: s.month, mode: s.mode, tension, interest });
+      applyPlayheadUpdate(set, get, year, s.month);
     },
 
     setMonth: (m) => {
       const s = get();
       const month = Math.min(11, Math.max(0, Number(m)));
-      const { tension, interest } = safeMetrics(s.cityA, s.year, month, s.scenario, s.futureEnabled);
-      set({ month, tension, interest });
-      emitClockEvent("tick", { year: s.year, month, mode: s.mode, tension, interest });
+      applyPlayheadUpdate(set, get, s.year, month);
     },
 
     seek: (y, m = 0) => {
@@ -165,9 +197,7 @@ export const useClock = create((set, get) => {
       const { startYear, endYear } = safeRange(s.cityA, s.scenario, s.futureEnabled);
       const year = Math.min(endYear, Math.max(startYear, Number(y)));
       const month = Math.min(11, Math.max(0, Number(m)));
-      const { tension, interest } = safeMetrics(s.cityA, year, month, s.scenario, s.futureEnabled);
-      set({ year, month, tension, interest });
-      emitClockEvent("tick", { year, month, mode: s.mode, tension, interest });
+      applyPlayheadUpdate(set, get, year, month);
     },
 
     leap: (years) => {
@@ -183,16 +213,20 @@ export const useClock = create((set, get) => {
       } else if (targetYear < startYear) {
         targetYear = startYear;
       }
-      const { tension, interest } = safeMetrics(s.cityA, targetYear, s.month, s.scenario, s.futureEnabled);
-      set({ year: targetYear, tension, interest });
-      emitClockEvent("tick", { year: targetYear, month: s.month, mode: s.mode, tension, interest });
+      applyPlayheadUpdate(set, get, targetYear, s.month);
     },
 
     setMode: (mode) => {
       if (!["month", "year", "story"].includes(mode)) return;
-      const prev = get().mode;
-      const nextPacing = mode === "story" ? get().pacing : "normal";
+      const s = get();
+      const prev = s.mode;
+      const activeScenario = s.futureEnabled ? s.scenario : undefined;
+      const nextPacing = computePacing(mode, s.cityA, s.year, s.month, activeScenario);
+      const prevPacing = s.pacing;
       set({ mode, pacing: nextPacing });
+      if (prevPacing !== nextPacing) {
+        emitClockEvent("pacing", { pacing: nextPacing, year: s.year, month: s.month });
+      }
       if (prev !== mode && get().playing) {
         scheduleNextTick({ getState: get });
       }
@@ -220,8 +254,7 @@ export const useClock = create((set, get) => {
       if (key === "cityA") {
         const { startYear, endYear } = safeRange(id, s.scenario, s.futureEnabled);
         const year = Math.min(endYear, Math.max(startYear, s.year));
-        const { tension, interest } = safeMetrics(id, year, s.month, s.scenario, s.futureEnabled);
-        set({ cityA: id, year, tension, interest });
+        applyPlayheadUpdate(set, get, year, s.month, { cityA: id });
       } else {
         set({ cityB: id });
       }
@@ -235,8 +268,7 @@ export const useClock = create((set, get) => {
 
     setScenario: (scenario) => {
       const s = get();
-      const { tension, interest } = safeMetrics(s.cityA, s.year, s.month, scenario, s.futureEnabled);
-      set({ scenario, tension, interest });
+      applyPlayheadUpdate(set, get, s.year, s.month, { scenario });
     },
 
     setFutureEnabled: (futureEnabled) => {
@@ -244,8 +276,7 @@ export const useClock = create((set, get) => {
       const enabled = !!futureEnabled;
       const { startYear, endYear } = safeRange(s.cityA, s.scenario, enabled);
       const year = Math.min(endYear, Math.max(startYear, s.year));
-      const { tension, interest } = safeMetrics(s.cityA, year, s.month, s.scenario, enabled);
-      set({ futureEnabled: enabled, year, tension, interest });
+      applyPlayheadUpdate(set, get, year, s.month, { futureEnabled: enabled });
     },
 
     setPacing: (pacing) => {
@@ -253,7 +284,7 @@ export const useClock = create((set, get) => {
       const prev = get().pacing;
       if (prev === pacing) return;
       set({ pacing });
-      emitClockEvent("pacing", { pacing });
+      emitClockEvent("pacing", { pacing, year: get().year, month: get().month });
       if (get().playing) {
         scheduleNextTick({ getState: get });
       }
@@ -263,7 +294,6 @@ export const useClock = create((set, get) => {
   return store;
 });
 
-// Attach event helpers directly on useClock for convenience (`clock.on(...)`)
 useClock.on = onClockEvent;
 useClock.emit = emitClockEvent;
 useClock.clearListeners = clearClockListeners;

@@ -1,1 +1,2 @@
 C4 | global clock | Zustand | src/state/clock.js, tests/clock.test.js | month ticks every 2.5s, contract + 6 unit tests pass
+C6 | pacing, gating, future | JS, Zustand | src/state/pacing.js, src/state/clock.js, tests/pacing.test.js | smart pacing in Story Mode, calm streak & layer gating tests pass
