@@ -75,6 +75,7 @@ const city = {
   ],
   yearly,
   projection: {
+    source: "SAMPLE (fake) data. Real source will be NASA NEX-GDDP-CMIP6",
     scenarios: ["ssp245", "ssp585"],
     temperature: { ssp245: { 2050: 1.8, 2100: 2.4 }, ssp585: { 2050: 2.3, 2100: 4.1 } },
   },
