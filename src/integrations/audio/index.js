@@ -15,6 +15,10 @@ export default function createAudioEngine() {
       state.building = (async () => {
         const { buildCore } = await import("./core.js");
         const Tone = await import("tone");
+        // Steady beats a quick response here (it is ambient music, not an instrument): a bigger audio buffer and more
+        // scheduling lead time, so a short stall of the window (stretching it, a busy computer) does not make it stutter.
+        // Must happen before any sound node is created.
+        try { Tone.setContext(new Tone.Context({ latencyHint: "playback", lookAhead: 0.4 })); } catch { /* keep the default context */ }
         await Tone.start(); // must come from a user click; the Electron app also allows autoplay
         const core = await buildCore();
         core.setMuted(state.muted);

@@ -38,13 +38,20 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
       setReady(true);
       latest.current.onReady?.(map); // the weather overlay needs the map to place itself on the disc
     });
+    // While a window is being stretched the size changes many times a second: resize the map at most once per frame
+    let resizeFrame = 0;
     const onResize = () => {
-      map.resize();
-      if (latest.current.phase === "intro") map.jumpTo({ zoom: globeZoom(map) });
+      if (resizeFrame) return;
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = 0;
+        map.resize();
+        if (latest.current.phase === "intro") map.jumpTo({ zoom: globeZoom(map) });
+      });
     };
     const ro = new ResizeObserver(onResize);
     ro.observe(box.current);
     return () => {
+      cancelAnimationFrame(resizeFrame);
       ro.disconnect();
       api.current.stopSpin?.();
       api.current.pins?.destroy();

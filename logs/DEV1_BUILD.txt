@@ -25,3 +25,4 @@ U6 | studio step 5: Right now card, history chart, record toasts | React, SVG, v
 U7 | studio polish: narrow-window layout for cards, history toggle and chart | CSS | src/studio/ui/ui.css | checked at 1440, 1280, 1024 wide
 U8 | studio compare mode: second city pill, side-by-side card, city B on the right (audio pan + edge glow) | React, Tone panner | src/studio/ui, src/integrations/audio | uses existing snapshotB in setMonth, no contract change
 U9 | compare fixes: second globe pane with its own disc and weather, strip under both, clearer left/right sound, no replayed sounds | React, Tone | src/studio, src/integrations/audio | both cities visible, stereo checked by offline render
+U10 | audio steadier when the window is stretched: bigger audio buffer, 0.4 s lookahead, globe resize once per frame | Tone context | src/integrations/audio/index.js, GlobeStage | measured: playing, no errors
