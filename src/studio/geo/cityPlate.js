@@ -25,7 +25,9 @@ export function initPlate(map) {
 /** Put the geometry of a city's disc into the layers (height stays where it is). */
 export function setPlateShape(map, shape) {
   const body = shape.kind === "custom" ? shape.feature : shape.feature;
-  map.getSource("plate-shadow").setData(fc([discFeature(shape.center, shape.radiusKm * 1.14)]));
+  // the shadow follows the shape (a slightly larger copy for a real outline, a round one for the placeholder disc)
+  const grow = (f, k) => ({ ...f, geometry: { ...f.geometry, coordinates: f.geometry.coordinates.map((ring) => ring.map(([x, y]) => [shape.center[0] + (x - shape.center[0]) * k, shape.center[1] + (y - shape.center[1]) * k])) } });
+  map.getSource("plate-shadow").setData(fc([shape.kind === "custom" && shape.feature.geometry.type === "Polygon" ? grow(shape.feature, 1.12) : discFeature(shape.center, shape.radiusKm * 1.14)]));
   map.getSource("plate-body").setData(fc([body]));
   map.getSource("plate-grooves").setData(fc(shape.kind === "disc" ? grooveFeatures(shape.center, shape.radiusKm) : []));
   map.getSource("plate-rim").setData(fc(shape.kind === "disc" ? [ringFeature(shape.center, shape.radiusKm, shape.radiusKm - 0.55)] : []));

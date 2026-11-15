@@ -16,7 +16,7 @@ function createWindow() {
     },
   });
 
-  const hash = process.env.STUDIO ? "/studio" : ""; // STUDIO=1 opens our own UI
+  const hash = process.env.CLASSIC ? "" : "/studio"; // our own (Studio) UI is the default; CLASSIC=1 opens the first, simpler UI
   if (process.env.ELECTRON_DEV) {
     win.loadURL("http://localhost:5173/#" + hash);
   } else {

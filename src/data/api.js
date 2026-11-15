@@ -52,7 +52,7 @@ function projectionPoints(city, scenario) {
 
 // Straight-line path from the last measured year's mean anomaly to the projected points.
 // ASSUMPTION: projected values use the same baseline as the temperature layer.
-function projectedAnomaly(city, year, scenario) {
+function projectedAnomaly(city, year, scenario, month = null) {
   const pts = projectionPoints(city, scenario);
   const last = lastDataYear(city);
   if (!pts || year <= last) return null;
@@ -63,7 +63,10 @@ function projectedAnomaly(city, year, scenario) {
   for (let i = 1; i < path.length; i++) {
     if (year <= path[i][0]) {
       const [y0, v0] = path[i - 1], [y1, v1] = path[i];
-      return Math.round((v0 + ((v1 - v0) * (year - y0)) / (y1 - y0)) * 100) / 100;
+      const yearly = v0 + ((v1 - v0) * (year - y0)) / (y1 - y0);
+      // seasonal shape from the projection file (winters warm more than summers), when it has one
+      const shape = month != null ? city.projection?.seasonal?.[scenario]?.[month] : null;
+      return Math.round((yearly + (typeof shape === "number" ? shape : 0)) * 100) / 100;
     }
   }
   return null;
@@ -108,7 +111,7 @@ export function getSnapshot(cityOrId, year, month, scenario) {
   const layers = emptyLayers();
 
   if (isProjection) {
-    const a = projectedAnomaly(city, year, scenario);
+    const a = projectedAnomaly(city, year, scenario, month);
     if (a != null) {
       layers.temperature = { available: true, anomaly: a, value: a };
       return { year, month, isProjection, layers, tension: Math.round(0.35 * clamp(a / 1.5, 0, 1) * 100) / 100, interest: 0 };

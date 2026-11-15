@@ -61,6 +61,7 @@ export function gaugesFor(snapshot, city, { enabled = [], showGreenery = true } 
   if (!snapshot || !city) return [];
   const L = snapshot.layers;
   const out = [];
+  const projected = !!snapshot.isProjection; // the future has temperature only
   const waiting = (id, label, startYear) => out.push({ id, label, value: "–", caption: `starts in ${startYear}`, bar: { mode: "fill", amount: 0 }, waiting: true });
 
   if (city.layers.temperature && enabled.includes("temperature")) {
@@ -68,22 +69,22 @@ export function gaugesFor(snapshot, city, { enabled = [], showGreenery = true } 
     if (t.available) out.push({ id: "temperature", label: "Heat", value: `${sign(t.anomaly)} °C`, caption: Math.abs(t.anomaly) < 0.5 ? "about normal" : t.anomaly > 0 ? "hotter than normal" : "cooler than normal", bar: { mode: "center", amount: clamp(t.anomaly / 3, -1, 1) } });
     else waiting("temperature", "Heat", city.layers.temperature.startYear);
   }
-  if (city.layers.rainfall && enabled.includes("rainfall")) {
+  if (!projected && city.layers.rainfall && enabled.includes("rainfall")) {
     const r = L.rainfall;
     if (r.available) out.push({ id: "rainfall", label: "Rain", value: `${Math.round(r.value)} mm`, caption: rainCaption(r.value, getRainNormals(city)?.[snapshot.month], snapshot.month), bar: { mode: "fill", amount: clamp((r.percentile ?? 0) / 100, 0, 1) } });
     else waiting("rainfall", "Rain", city.layers.rainfall.startYear);
   }
-  if (city.layers.drought && enabled.includes("drought")) {
+  if (!projected && city.layers.drought && enabled.includes("drought")) {
     const d = L.drought;
     if (d.available) out.push({ id: "drought", label: "Dry spells", value: sign(d.spi), caption: spiCaption(d.spi), bar: { mode: "center", amount: clamp(d.spi / 3, -1, 1) } });
     else waiting("drought", "Dry spells", city.layers.drought.startYear);
   }
-  if (city.layers.earthquakes && enabled.includes("quakes")) {
+  if (!projected && city.layers.earthquakes && enabled.includes("quakes")) {
     const q = L.quakes?.length ? L.quakes.reduce((a, b) => (b.magnitude > a.magnitude ? b : a)) : null;
     out.push({ id: "quakes", label: "Earthquakes", value: q ? `M${q.magnitude.toFixed(1)}` : "None", caption: q ? `${Math.round(q.depth)} km deep` : "none this month", bar: { mode: "fill", amount: q ? clamp((q.magnitude - 5) / 3, 0.1, 1) : 0 } });
   }
   const veg = city.layers.vegetation;
-  if (veg && showGreenery) {
+  if (!projected && veg && showGreenery) {
     const row = veg.monthly?.[snapshot.year];
     if (!row) waiting("vegetation", "Greenery", veg.startYear);
     else {

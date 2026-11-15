@@ -17,6 +17,7 @@ import CompareCard from "./ui/CompareCard.jsx";
 import CompareControl from "./ui/CompareControl.jsx";
 import AccessMenu from "./ui/AccessMenu.jsx";
 import AboutSound from "./ui/AboutSound.jsx";
+import FutureControl from "./ui/FutureControl.jsx";
 import LiveDescription from "./ui/LiveDescription.jsx";
 import { describeMonth } from "./ui/describe.js";
 import WeatherLayer from "./weather/WeatherLayer.jsx";
@@ -195,11 +196,13 @@ export default function StudioApp() {
       {selectedId && city && !historyOpen && !comparing && (
         <div className="pills">
           <button type="button" className="hist-toggle" onClick={() => setHistoryOpen(true)}>History</button>
+          <FutureControl city={city} />
           <CompareControl cities={cities} cityId={selectedId} cityBId={comparing ? cityBId : null} onPick={pickB} onClear={clearB} />
         </div>
       )}
       {selectedId && city && historyOpen && <HistoryChart city={city} enabled={layers} range={range} onClose={() => setHistoryOpen(false)} />}
       {selectedId && city && <BadgeToast />}
+      {snapshot?.isProjection && <p className="projection-note" role="status">Projection, not a measurement. Temperature only, World Bank CMIP6 ({scenario === "ssp585" ? "SSP5-8.5, high emissions" : "SSP2-4.5, medium emissions"}).</p>}
       {selectedId && city && <PlaybackBar cityId={selectedId} range={range} markers={markers} reduce={reduce} />}
 
       <p className="credit">{IMAGERY_CREDIT}</p>

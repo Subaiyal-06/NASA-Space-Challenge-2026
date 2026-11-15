@@ -19,8 +19,9 @@ describe("city list and loading (real data from the data team)", () => {
   it("loads a city and rejects unknown ones; a file without a projection loads fine", async () => {
     const karachi = await loadCity("karachi");
     expect(karachi.city).toBe("Karachi");
-    expect(karachi.projection).toBeUndefined();
+    expect(karachi.projection.source).toMatch(/CMIP6/); // real files now carry the World Bank CMIP6 projections, with a named source
     expect(getDataNotes("karachi")).toEqual([]);
+    expect((await loadCity("karachi")).projection.temperature.ssp585["2090"]).toBeGreaterThan(karachi.projection.temperature.ssp245["2090"]);
     await expect(loadCity("atlantis")).rejects.toThrow(/Unknown city "atlantis"/);
   });
 
@@ -100,7 +101,11 @@ describe("range, baseline, series, markers", () => {
   it("getRange: real data 1981-2025, projection only with a named source", async () => {
     const real = await loadCity("karachi");
     expect(getRange(real)).toMatchObject({ startYear: 1981, endYear: 2025 });
-    expect(getRange(real, "ssp245").endYear).toBe(2025); // no projection in the file yet
+    expect(getRange(real, "ssp245").endYear).toBe(2090); // CMIP6 20-year windows, placed at 2030, 2050, 2070, 2090
+    const hot = getSnapshot(real, 2090, 0, "ssp585"); const mild = getSnapshot(real, 2090, 0, "ssp245");
+    expect(hot.isProjection).toBe(true);
+    expect(hot.layers.temperature.anomaly).toBeGreaterThan(mild.layers.temperature.anomaly);
+    expect(getSnapshot(real, 2090, 6, "ssp585").layers.temperature.anomaly).toBeLessThan(hot.layers.temperature.anomaly); // summers warm less than winters in the file
     expect(getRange(real).layerStartYears.air).toBeNull(); // real files have no air layer yet
     expect(getRange(real).layerStartYears.vegetation).toBe(2001); // extra layers are reported too
     expect(getRange(withSource).startYear).toBe(1900);

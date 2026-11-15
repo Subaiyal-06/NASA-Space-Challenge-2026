@@ -4,9 +4,10 @@
 // geometry, a Feature, or a FeatureCollection) into src/studio/assets/shapes/. It is picked up automatically.
 import { discFeature, circleRing } from "./math.js";
 
-const files = import.meta.glob("../assets/shapes/*.geojson", { eager: true, import: "default" });
+const files = import.meta.glob("../assets/shapes/*.geojson", { eager: true, query: "?raw", import: "default" }); // read as text, then parsed
 const custom = {};
-for (const [path, gj] of Object.entries(files)) {
+for (const [path, text] of Object.entries(files)) {
+  const gj = typeof text === "string" ? JSON.parse(text) : text;
   const id = path.split("/").pop().replace(".geojson", "");
   const feature = gj.type === "FeatureCollection" ? gj.features[0] : gj.type === "Feature" ? gj : { type: "Feature", properties: {}, geometry: gj };
   custom[id] = feature;

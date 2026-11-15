@@ -30,3 +30,4 @@ U11 | quakes per-city floor (Karachi 3->27 months), drought dust+labels, own voi
 U12 | accessibility mode: Accessibility menu (voice, screen-reader description, high contrast, shortcuts), live month description, chart readout follows playhead | React | src/studio/ui, src/studio/state.js | 144 tests, checked by screenshot
 U13 | accessibility check via the browser accessibility tree (25 controls all named, landmarks, live region); weather labels no longer double-announce | CDP | WeatherLayer | NVDA test left to the developer
 U14 | How it sounds page: what each sound means, calm-to-intense steps, why musical, verified data sources | React dialog | src/studio/ui/AboutSound.jsx | 147 tests
+U15 | future CMIP6 projections wired in (SSP2-4.5/5.8.5 to 2090, baseline-shifted, seasonal), Future pill, traced city outlines for all 5 cities, Studio default in the desktop app | Python scripts, React | data/cities, src/data/api.js, src/studio | 147 tests

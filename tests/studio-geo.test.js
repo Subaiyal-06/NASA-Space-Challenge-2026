@@ -53,12 +53,19 @@ describe("city discs", () => {
     expect(discFeature(karachi, 5).geometry.type).toBe("Polygon");
   });
 
-  it("every city gets a placeholder disc until a real outline is added", () => {
+  it("every city now has its own traced outline: a closed polygon that stays within the disc size around the city", () => {
     for (const c of getCityList()) {
       const s = cityShape(c);
-      expect(s.kind).toBe("disc");
+      expect(s.kind).toBe("custom");
       expect(s.radiusKm).toBe(DISC_RADIUS_KM[c.id]);
       expect(s.center).toEqual([c.lon, c.lat]);
+      const ring = s.feature.geometry.coordinates[0];
+      expect(ring.length).toBeGreaterThan(20);
+      expect(ring[0]).toEqual(ring[ring.length - 1]);
+      for (const [lon, lat] of ring) {
+        const km = Math.hypot((lon - c.lon) * 111.32 * Math.cos((c.lat * Math.PI) / 180), (lat - c.lat) * 110.574);
+        expect(km).toBeLessThanOrEqual(DISC_RADIUS_KM[c.id] * 1.12);
+      }
     }
   });
 
