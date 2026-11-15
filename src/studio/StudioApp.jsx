@@ -10,6 +10,9 @@ import GlobeStage from "./GlobeStage.jsx";
 import PlaybackBar from "./ui/PlaybackBar.jsx";
 import CategoryRail from "./ui/CategoryRail.jsx";
 import Visualizer from "./ui/Visualizer.jsx";
+import RightNow from "./ui/RightNow.jsx";
+import HistoryChart from "./ui/HistoryChart.jsx";
+import BadgeToast from "./ui/BadgeToast.jsx";
 import WeatherLayer from "./weather/WeatherLayer.jsx";
 import EdgeGlow, { beatSeconds } from "./weather/EdgeGlow.jsx";
 import { weatherFor } from "./weather/rules.js";
@@ -52,11 +55,10 @@ export default function StudioApp() {
   const tension = useClock((s) => s.tension);
   const showGreenery = useStudio((s) => s.extras.vegetation) !== false;
   const cityMeta = useMemo(() => cities.find((c) => c.id === selectedId) ?? null, [selectedId]);
-  const wx = useMemo(() => {
-    if (!city) return weatherFor(null);
-    const snapshot = getSnapshot(city, year, month, futureEnabled ? scenario : undefined);
-    return weatherFor(snapshot, { city, enabled: layers, showGreenery });
-  }, [city, year, month, layers, showGreenery, futureEnabled, scenario]);
+  const snapshot = useMemo(() => (city ? getSnapshot(city, year, month, futureEnabled ? scenario : undefined) : null), [city, year, month, futureEnabled, scenario]);
+  const wx = useMemo(() => (snapshot ? weatherFor(snapshot, { city, enabled: layers, showGreenery }) : weatherFor(null)), [snapshot, city, layers, showGreenery]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  useEffect(() => { if (!selectedId) setHistoryOpen(false); }, [selectedId]);
 
   // An earthquake month: cracks on the disc and a short shake of the picture (not when motion is reduced)
   const quakeCount = useFx((s) => s.quake);
@@ -91,7 +93,7 @@ export default function StudioApp() {
   return (
     <div className={`studio${reduce ? " studio--calm" : ""}${selectedId && city ? " studio--bar" : ""}`} data-phase={phase} onKeyDown={onKeyDown}>
       <div className={`stage-wrap${shaking ? " is-shaking" : ""}`} style={{ "--amp": `${Math.min(7, 2 + (quakeMagnitude - 5) * 1.6)}px` }}>
-        <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} onReady={setMap} onDisc={setDiscUp} />
+        <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} onReady={setMap} onDisc={setDiscUp} padBottom={historyOpen ? 120 : 0} />
       </div>
 
       {selectedId && city && <EdgeGlow glow={wx.glow} beatSeconds={beatSeconds(speed, tension)} reduce={reduce} />}
@@ -137,6 +139,10 @@ export default function StudioApp() {
 
       {phase === "explore" && <Visualizer reduce={reduce} />}
       {selectedId && city && <CategoryRail city={city} />}
+      {selectedId && city && !historyOpen && <RightNow wx={wx} snapshot={snapshot} city={city} enabled={layers} showGreenery={showGreenery} />}
+      {selectedId && city && !historyOpen && <button type="button" className="hist-toggle" onClick={() => setHistoryOpen(true)}>History</button>}
+      {selectedId && city && historyOpen && <HistoryChart city={city} enabled={layers} range={range} onClose={() => setHistoryOpen(false)} />}
+      {selectedId && city && <BadgeToast />}
       {selectedId && city && <PlaybackBar cityId={selectedId} range={range} markers={markers} reduce={reduce} />}
 
       <p className="credit">{IMAGERY_CREDIT}</p>

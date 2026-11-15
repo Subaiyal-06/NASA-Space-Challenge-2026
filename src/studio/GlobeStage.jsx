@@ -10,7 +10,7 @@ import { createPins } from "./geo/pins.js";
 import { initPlate, setPlateShape, animatePlate } from "./geo/cityPlate.js";
 import { cityShape } from "./geo/shapes.js";
 
-export default function GlobeStage({ phase, cities, selectedId, onSelect, onArrived, reduceMotion, onReady, onDisc }) {
+export default function GlobeStage({ phase, cities, selectedId, onSelect, onArrived, reduceMotion, onReady, onDisc, padBottom = 0 }) {
   const box = useRef(null);
   const api = useRef({ amount: 0, token: 0 });
   const latest = useRef({});
@@ -52,6 +52,14 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
     api.current.stopSpin?.();
     api.current.stopSpin = phase === "intro" && !reduceMotion ? startSpin(api.current.map) : null;
   }, [ready, phase, reduceMotion]);
+
+  // The history chart takes the bottom of the screen: lift the picture so the city stays in view
+  useEffect(() => {
+    if (!ready || phase !== "explore") return;
+    const { map } = api.current;
+    const padding = { ...STAGE_PADDING, bottom: STAGE_PADDING.bottom + padBottom };
+    if (latest.current.reduceMotion) map.jumpTo({ padding }); else map.easeTo({ padding, duration: 450 });
+  }, [ready, phase, padBottom]);
 
   // Intro -> swoop into Pakistan -> pins pop up (south to north)
   useEffect(() => {
