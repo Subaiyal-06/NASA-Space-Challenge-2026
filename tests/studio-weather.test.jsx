@@ -45,7 +45,7 @@ describe("weather rules use the real data", () => {
   it("Quetta's April 2004 is very dry; heat and cold are labelled in words", () => {
     const dry = wx(quetta, 2004, 3);
     expect(dry.dry).toBeGreaterThan(0.8);
-    expect(dry.labels.map((l) => l.text)).toContain("Very dry");
+    expect(dry.labels.map((l) => l.text)).toContain("Severe drought");
     const hot = wx(karachi, 2006, 1);
     expect(hot.heat).toBeGreaterThan(0.6);
     expect(hot.labels.map((l) => l.text)).toContain("Much hotter than usual");

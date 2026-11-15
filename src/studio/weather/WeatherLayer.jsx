@@ -151,6 +151,13 @@ export default function WeatherLayer({ map, city, wx, reduce }) {
       <div className="wx-ellipse wx-dry" style={{ left: a.cx - a.rx, top: topY - a.ry, width: a.rx * 2, height: a.ry * 2, opacity: wx.dry * 0.75 }} />
       <div className="wx-ellipse wx-cool" style={{ left: a.cx - a.rx, top: topY - a.ry, width: a.rx * 2, height: a.ry * 2, opacity: wx.heat < 0 ? Math.min(1, -wx.heat * 1.2) : 0 }} />
 
+      {/* drought: dust drifts across the parched ground (the cracked, browned ground is the tint above) */}
+      {wx.dry > 0 && (
+        <div className="wx-dust" style={{ left: a.cx - a.rx, top: topY - a.ry * 1.25, width: a.rx * 2, height: a.ry * 2.5, opacity: 0.35 + wx.dry * 0.5 }}>
+          <i /><i /><i />
+        </div>
+      )}
+
       {/* sun */}
       <div className="wx-sun" style={{ left: a.cx + a.rx * 0.55, top: topY - a.ry - a.rx * 0.78, width: a.rx * 0.7, height: a.rx * 0.7, opacity: wx.heat > 0 ? 0.35 + 0.65 * wx.heat : 0 }}><i /></div>
 

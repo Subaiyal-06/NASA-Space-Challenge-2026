@@ -2,7 +2,7 @@
 // month is always 0-11 (0 = January). Functions accept a city object from loadCity() or, once
 // loadCity(id) has been called, the city id.
 import { getCityList, loadCity, getLoadedCity, getDataNotes } from "./loader.js";
-import { getBaseline, getTension, getInterest, getRecords, dataYears } from "./derived.js";
+import { getBaseline, getTension, getInterest, getRecords, dataYears, quakeFloor } from "./derived.js";
 import { DATA_CONFIG } from "./config.js";
 
 export { getCityList, loadCity, getDataNotes };
@@ -129,7 +129,7 @@ export function getSnapshot(cityOrId, year, month, scenario) {
   layers.drought = { available: started(L.drought, year) && spi != null, spi: spi ?? null };
   layers.air = { available: started(L.air, year) && aod != null, aod: aod ?? null };
   layers.quakes = (L.earthquakes?.events ?? [])
-    .filter((e) => e.year === year && e.month - 1 === month && e.mag >= DATA_CONFIG.minQuakeMagnitude)
+    .filter((e) => e.year === year && e.month - 1 === month && e.mag >= quakeFloor(city))
     .map((e) => ({ magnitude: e.mag, depth: e.depth, lat: e.lat, lon: e.lon }));
 
   return { year, month, isProjection, layers, tension: getTension(city, year, month), interest: getInterest(city, year, month) };
@@ -175,7 +175,7 @@ export function getSeries(cityOrId, layer, fromYear, toYear) {
   const out = [];
   if (layer === "quakes") {
     for (const e of city.layers.earthquakes?.events ?? [])
-      if (e.year >= fromYear && e.year <= toYear && e.mag >= DATA_CONFIG.minQuakeMagnitude) out.push({ year: e.year, month: e.month - 1, value: e.mag });
+      if (e.year >= fromYear && e.year <= toYear && e.mag >= quakeFloor(city)) out.push({ year: e.year, month: e.month - 1, value: e.mag });
     return out.sort((a, b) => a.year - b.year || a.month - b.month);
   }
   const extra = city.layers[layer];

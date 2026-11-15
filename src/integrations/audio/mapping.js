@@ -20,7 +20,7 @@ export function rainLevel(percentile, mm) {
  * begun yet (`available` is false): "the orchestra grows" as real measurements start.
  */
 export function computeMonthValues(snapshot, enabled = ALL_LAYERS) {
-  const out = { rainLevel: 0, rainNotes: 0, drought: 0, haze: 0, brightness: 0, quake: null };
+  const out = { rainLevel: 0, rainNotes: 0, drought: 0, haze: 0, brightness: 0, heat: 0, heatOn: false, quake: null };
   const L = snapshot?.layers;
   if (!L) return out;
   const on = (id) => enabled.includes(id);
@@ -31,6 +31,8 @@ export function computeMonthValues(snapshot, enabled = ALL_LAYERS) {
   }
   if (on("temperature") && L.temperature?.available && L.temperature.anomaly != null) {
     out.brightness = clamp(L.temperature.anomaly / 2, -1, 1); // +2 C vs normal = brightest, -2 C = darkest
+    out.heat = out.brightness; // the same number also plays the heat chimes (higher, more and brighter when hotter)
+    out.heatOn = true;
   }
   if (on("drought") && L.drought?.available && L.drought.spi != null) {
     out.drought = clamp(-L.drought.spi / 2.5, 0, 1); // SPI -2.5 = worst drought

@@ -61,7 +61,7 @@ export function weatherFor(snapshot, { city = null, enabled = [], showGreenery =
   const dr = L.drought;
   if (on("drought") && dr?.available && dr.spi != null && dr.spi <= T.dryBelowSpi) {
     out.dry = 0.3 + 0.7 * clamp((-dr.spi + T.dryBelowSpi) / 1.5, 0, 1);
-    out.labels.push({ kind: "dry", text: dr.spi <= -2 ? "Very dry" : "Dry spell" });
+    out.labels.push({ kind: "dry", text: dr.spi <= -2 ? "Severe drought" : "Drought" });
     out.glow.push({ type: "drought", strength: 0.35 + 0.45 * out.dry });
   }
 

@@ -64,10 +64,26 @@ function quakeLevel(events, y, m) {
   return best;
 }
 
+const floorCache = new WeakMap();
+/** The smallest earthquake magnitude reported for this city (see DATA_CONFIG): notable for where it is. */
+export function quakeFloor(city) {
+  if (floorCache.has(city)) return floorCache.get(city);
+  const events = city.layers?.earthquakes?.events ?? [];
+  const years = dataYears(city);
+  const months = Math.max(1, years.length * 12);
+  let floor = DATA_CONFIG.minQuakeMagnitude;
+  for (const f of DATA_CONFIG.quakeFloors) {
+    const shaken = new Set(events.filter((e) => e.mag >= f && years.includes(e.year)).map((e) => e.year * 12 + e.month)).size;
+    if (shaken / months <= DATA_CONFIG.maxQuakeMonthShare) { floor = f; break; }
+  }
+  floorCache.set(city, floor);
+  return floor;
+}
+
 function buildTables(city) {
   const L = city.layers;
   const normals = getRainNormals(city);
-  const events = (L.earthquakes?.events ?? []).filter((e) => e.mag >= DATA_CONFIG.minQuakeMagnitude); // same floor as the API
+  const events = (L.earthquakes?.events ?? []).filter((e) => e.mag >= quakeFloor(city)); // same floor as the API
   const tension = {};
   const interest = {};
   for (const y of dataYears(city)) {

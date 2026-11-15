@@ -172,7 +172,7 @@ export default function StudioApp() {
         </button>
       )}
 
-      {phase === "explore" && <Visualizer reduce={reduce} />}
+      {phase === "explore" && <Visualizer reduce={reduce} city={selectedId ? city : null} />}
       {selectedId && city && <CategoryRail city={city} />}
       {selectedId && city && !historyOpen && !comparing && <RightNow wx={wx} snapshot={snapshot} city={city} enabled={layers} showGreenery={showGreenery} />}
       {selectedId && city && comparing && (

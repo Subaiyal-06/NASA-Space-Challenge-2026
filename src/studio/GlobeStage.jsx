@@ -22,7 +22,7 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
   useEffect(() => {
     const map = new MapLibreMap({
       container: box.current, style: buildStyle(latest.current.cities), center: [150, 16], zoom: 1.4, pitch: 0,
-      interactive: false, attributionControl: false, fadeDuration: 0,
+      interactive: false, attributionControl: false, fadeDuration: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 1.25), // sharp enough, and far lighter on big or high-resolution screens
       padding: { ...STAGE_PADDING, bottom: STAGE_PADDING.bottom + latest.current.padBottom, left: latest.current.padLeft }, // the second pane starts with its final framing
     });
     api.current.map = map;

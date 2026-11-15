@@ -3,7 +3,7 @@ import sample from "../data/cities/karachi.sample.json";
 import {
   getCityList, loadCity, getSnapshot, getRange, getBaselineSnapshot, getSeries, getMarkers, getDataNotes, getExtras,
 } from "../src/data/api.js";
-import { getTension, getInterest, getRecords } from "../src/data/derived.js";
+import { getTension, getInterest, getRecords, quakeFloor, dataYears } from "../src/data/derived.js";
 import { checkCity } from "../src/data/validate.js";
 import { DATA_CONFIG } from "../src/data/config.js";
 import { applyAdapters } from "../src/data/adapters/index.js";
@@ -140,7 +140,7 @@ describe("range, baseline, series, markers", () => {
     expect(t).toHaveLength(24);
     expect(t[0]).toMatchObject({ year: 1981, month: 0 });
     expect(getSeries(city, "quakes", 2013, 2013).some((q) => q.value === 7.7)).toBe(true);
-    expect(getSeries(city, "quakes", 1981, 2025).every((q) => q.value >= DATA_CONFIG.minQuakeMagnitude)).toBe(true);
+    expect(getSeries(city, "quakes", 1981, 2025).every((q) => q.value >= quakeFloor(city))).toBe(true);
     expect(getSeries(city, "tension", 1990, 1990)).toHaveLength(12);
     expect(() => getSeries(city, "bogus", 1981, 1982)).toThrow(/unknown layer/);
   });
@@ -205,7 +205,21 @@ describe("extra layers (greenery now; aqi and night lights later) and the earthq
     const reported = getSeries(peshawar, "quakes", 1981, 2025);
     expect(all.length).toBeGreaterThan(1500);
     expect(reported.length).toBeLessThan(250);
-    expect(reported.length).toBe(all.filter((e) => e.mag >= DATA_CONFIG.minQuakeMagnitude).length);
+    expect(reported.length).toBe(all.filter((e) => e.mag >= quakeFloor(peshawar)).length);
+  });
+});
+
+describe("earthquake floor is chosen per city (notable for where it is)", () => {
+  it("quiet cities report smaller quakes, busy ones only strong ones, and no city shakes more than about one month in eight", async () => {
+    const floors = {};
+    for (const id of ["karachi", "lahore", "islamabad", "peshawar", "quetta"]) {
+      const city = await loadCity(id);
+      floors[id] = quakeFloor(city);
+      const months = new Set(getSeries(city, "quakes", 1981, 2025).map((q) => q.year * 12 + q.month)).size;
+      expect(months / (dataYears(city).length * 12)).toBeLessThanOrEqual(DATA_CONFIG.maxQuakeMonthShare + 0.0001);
+    }
+    expect(floors.karachi).toBeLessThan(floors.peshawar);
+    expect(floors.karachi).toBe(5);
   });
 });
 

@@ -76,3 +76,13 @@
   68% { transform: translate(calc(var(--amp) * -0.4), 0); }
   84% { transform: translate(calc(var(--amp) * 0.25), 0); }
 }
+
+/* drought dust: soft brown puffs sliding across the dry ground */
+.wx-dust { overflow: hidden; border-radius: 50%; transition: opacity 1.2s ease; }
+.wx-dust i { position: absolute; left: -45%; width: 60%; height: 34%; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(196, 150, 96, 0.9), rgba(196, 150, 96, 0) 70%); filter: blur(6px); animation: dustDrift 9s linear infinite; }
+.wx-dust i:nth-child(1) { top: 18%; }
+.wx-dust i:nth-child(2) { top: 44%; animation-duration: 12s; animation-delay: -4s; }
+.wx-dust i:nth-child(3) { top: 68%; animation-duration: 10s; animation-delay: -7s; }
+@keyframes dustDrift { from { transform: translateX(0); } to { transform: translateX(300%); } }
+.wx--still .wx-dust i { animation: none; left: 20%; }
+.wx-dry { opacity: 1; }

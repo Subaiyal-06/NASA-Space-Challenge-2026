@@ -19,7 +19,7 @@ export async function buildCore() {
   limiter.connect(fft);
   limiter.connect(wave);
   const master = new Tone.Filter(16000, "lowpass").connect(limiter); // closes with drought and haze
-  const reverb = new Tone.Reverb({ decay: 7, wet: 0.45 }).connect(master);
+  const reverb = new Tone.Reverb({ decay: 4.5, wet: 0.45 }).connect(master);
   await reverb.ready; // the reverb builds its echo tail asynchronously
   const droneFilter = new Tone.Filter(400, "lowpass").connect(reverb);
   const drone = new Tone.PolySynth(Tone.Synth, {
@@ -101,7 +101,10 @@ export async function buildCore() {
       const f = fft.getValue();
       const frequency = Array.from(f, (db) => Math.min(1, Math.max(0, (db + 92) / 62))); // -92 dB (silent) .. -30 dB (loud)
       const waveform = Array.from(wave.getValue());
-      return { frequency, waveform };
+      // which data instrument is sounding right now (0..1 each), for the visualiser; while comparing the louder city wins
+      const a = instruments.activity(); const b = instrumentsB?.activity();
+      const voices = b ? Object.fromEntries(Object.keys(a).map((k) => [k, Math.max(a[k], b[k])])) : a;
+      return { frequency, waveform, voices };
     },
 
     dispose() {
