@@ -15,8 +15,8 @@ function Root() {
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
   if (hash === "#/dev") return <Suspense fallback={null}><DevPanel /></Suspense>;
-  if (hash === "#/studio") return <Suspense fallback={null}><StudioApp /></Suspense>; // our own UI (in progress)
-  return <App />;
+  if (hash === "#/classic") return <App />; // the first, simpler UI
+  return <Suspense fallback={null}><StudioApp /></Suspense>; // our own UI is the default (also in a browser, for example on a web page)
 }
 
 createRoot(document.getElementById("root")).render(<Root />);
