@@ -14,7 +14,7 @@
  */
 
 export const AUDIO_REQUIRED = ["start", "stop", "setMonth", "setLayers", "setMode", "setPacing", "setMuted"];
-export const AUDIO_OPTIONAL = ["setCity", "setCompare", "setTension", "dispose"];
+export const AUDIO_OPTIONAL = ["setCity", "setCompare", "setTension", "dispose", "getLevels"];
 export const LAYER_IDS = ["temperature", "rainfall", "drought", "quakes", "air"];
 
 /** Sample arguments used by the contract test and the placeholders. */
@@ -25,7 +25,7 @@ export const SAMPLE_AUDIO_PAYLOAD = {
 };
 const SAMPLE_ARGS = {
   start: [], stop: [], setMonth: [SAMPLE_AUDIO_PAYLOAD], setLayers: [LAYER_IDS], setMode: ["month"],
-  setPacing: ["normal"], setMuted: [false], setCity: [{ city: "Sample" }], setCompare: [null], setTension: [0.5], dispose: [],
+  setPacing: ["normal"], setMuted: [false], setCity: [{ city: "Sample" }], setCompare: [null], setTension: [0.5], dispose: [], getLevels: [],
 };
 
 /** Checks that an engine has every required method. Returns a list of problems (empty = OK). */

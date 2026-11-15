@@ -9,8 +9,10 @@
 //   ...  ui: { ..., Timeline, ... }
 // If something breaks, set that one line back to null and the app works again.
 
+import createAudioEngine from "./audio/index.js"; // our own music (Tone.js loads only when Start is pressed)
+
 export default {
-  audio: null, // createAudioEngine factory, or null for NullAudio
+  audio: createAudioEngine, // createAudioEngine factory, or null for NullAudio
   ui: {
     GlobeIntro: null,
     Timeline: null,

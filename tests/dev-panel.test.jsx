@@ -32,8 +32,9 @@ describe("contract tests", () => {
     expect(r.problems.join(" ")).toContain("crashed while rendering");
   });
 
-  it("audio: NullAudio passes; an engine missing a method fails clearly", async () => {
-    expect(await runAudioContract()).toMatchObject({ ok: true, status: "placeholder" });
+  it("audio: the real music module and the placeholder both pass; an engine missing a method fails clearly", async () => {
+    expect(await runAudioContract()).toMatchObject({ ok: true, status: "real" });
+    expect(await runAudioContract(createNullAudio())).toMatchObject({ ok: true, status: "placeholder" });
     const bad = { ...createNullAudio(), setPacing: undefined };
     const r = await runAudioContract(bad);
     expect(r.ok).toBe(false);
@@ -52,7 +53,7 @@ describe("DevPanel", () => {
     expect(el.textContent).toContain("Audio call log");
     const button = [...el.querySelectorAll("button")].find((b) => b.textContent === "Run contract tests");
     await act(async () => { button.click(); });
-    expect(el.textContent).toContain("Audio (placeholder): PASS");
+    expect(el.textContent).toContain("Audio (real): PASS");
     expect(el.textContent).toContain("Clock contract: PASS");
     expect(el.textContent).not.toContain("FAIL");
     await act(async () => { root.unmount(); });

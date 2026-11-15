@@ -80,6 +80,7 @@ When your piece is ready, we run **contract tests** in the app's dev panel and t
 | \`setPacing(state)\` | \`"normal"\` or \`"skipping"\` | Skipping = a quiet stretch is being skipped. |
 | \`setMuted(bool)\` | boolean | Mute or unmute. |
 | \`setTension(x)\` | 0 to 1 | Optional: lets a test slider set the tension. |
+| \`getLevels()\` | none | Optional: what is coming out right now, for the visualizer: \`{ frequency: [0..1, low to high], waveform: [-1..1] }\`. Return \`null\` if there is no sound yet. |
 
 **\`setMonth\` payload** (\`month\` is 0-11, 0 = January):
 ${code(json(SAMPLE_AUDIO_PAYLOAD))}

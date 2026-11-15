@@ -66,6 +66,7 @@ describe("audio contract and NullAudio", () => {
     expect(validateAudioEngine(engine)).toEqual([]);
     const results = await testAudioEngine(engine);
     expect(results.every((r) => r.ok)).toBe(true);
+    expect(engine.getLevels()).toBeNull(); // the placeholder has no sound to show
     const methods = useAudioLog.getState().calls.map((c) => c.method);
     expect(methods).toEqual(expect.arrayContaining(["start", "setMonth", "setPacing", "setMuted"]));
   });
@@ -77,9 +78,12 @@ describe("audio contract and NullAudio", () => {
     expect(results.find((r) => r.method === "setMode")).toMatchObject({ ok: false, error: "nope" });
   });
 
-  it("createAudio() gives NullAudio while nothing is plugged in", () => {
-    expect(createAudio().isNull).toBe(true);
-    expect(Object.values(integrationStatus()).every((s) => s === "placeholder")).toBe(true);
+  it("createAudio() gives our music module (real) and it follows the contract", () => {
+    const engine = createAudio();
+    expect(engine.isNull).toBeUndefined();
+    expect(validateAudioEngine(engine)).toEqual([]);
+    expect(integrationStatus().audio).toBe("real");
+    expect(Object.entries(integrationStatus()).filter(([k]) => k !== "audio").every(([, s]) => s === "placeholder")).toBe(true);
   });
 });
 

@@ -11,6 +11,7 @@ import { handleAppKeyDown } from "../src/app/keyboard.js";
 import { announceMonth } from "../src/app/announcer.js";
 import { useWarnings } from "../src/slots/warnings.js";
 import { useAudioLog } from "../src/slots/NullAudio.js";
+import registry from "../src/integrations/index.js";
 import { loadCity, getSnapshot } from "../src/data/api.js";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -29,6 +30,7 @@ describe("C8 & C9: Connectors, App Composition, Compare, Keyboard & Announcer", 
     useAudioLog.getState().clear();
     await loadCity("karachi");
     await loadCity("lahore");
+    registry.audio = null; // this test watches the placeholder audio's call log, so use the placeholder here
     resetAudioEngine();
     useClock.getState().pause();
     useClock.clearListeners();

@@ -35,7 +35,7 @@ When your piece is ready, we run **contract tests** in the app's dev panel and t
 - Tempo never changes. During skipping, hold the drone and play a soft riser; restart on the bar line.
 
 **Required methods:** `start`, `stop`, `setMonth`, `setLayers`, `setMode`, `setPacing`, `setMuted`
-**Optional methods:** `setCity`, `setCompare`, `setTension`, `dispose`
+**Optional methods:** `setCity`, `setCompare`, `setTension`, `dispose`, `getLevels`
 
 | Method | Arguments | Meaning |
 |---|---|---|
@@ -47,6 +47,7 @@ When your piece is ready, we run **contract tests** in the app's dev panel and t
 | `setPacing(state)` | `"normal"` or `"skipping"` | Skipping = a quiet stretch is being skipped. |
 | `setMuted(bool)` | boolean | Mute or unmute. |
 | `setTension(x)` | 0 to 1 | Optional: lets a test slider set the tension. |
+| `getLevels()` | none | Optional: what is coming out right now, for the visualizer: `{ frequency: [0..1, low to high], waveform: [-1..1] }`. Return `null` if there is no sound yet. |
 
 **`setMonth` payload** (`month` is 0-11, 0 = January):
 ```json

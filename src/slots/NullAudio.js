@@ -15,6 +15,7 @@ export function createNullAudio() {
       useAudioLog.setState((s) => ({ calls: [...s.calls.slice(-199), { time: Date.now(), method, args }] }));
     };
   }
+  engine.getLevels = () => null; // no sound, so nothing for the visualizer to show
   engine.isNull = true;
   return engine;
 }
