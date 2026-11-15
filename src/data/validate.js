@@ -1,5 +1,7 @@
 // Checks that a city object follows the data contract (README Section 7).
 // checkCity returns { errors, warnings }. Errors = the file is broken. Warnings = usable, but look at it.
+import { DATA_CONFIG } from "./config.js";
+
 const isNum = (x) => typeof x === "number" && Number.isFinite(x);
 const is12 = (a) => Array.isArray(a) && a.length === 12 && a.every(isNum);
 
@@ -35,6 +37,24 @@ export function checkCity(c) {
     for (const e of q.events ?? [])
       need([e.year, e.month, e.mag, e.depth, e.lat, e.lon].every(isNum) && e.month >= 1 && e.month <= 12,
         `earthquakes: bad event ${JSON.stringify(e)}`);
+  }
+
+  // Extra layers (vegetation, aqi, nightlights, ...): any layer the core does not know. They need a source and a
+  // startYear, and either `monthly` ({ year: [12 numbers] }) or `yearly` ({ year: number }).
+  for (const [name, L] of Object.entries(c.layers)) {
+    if (DATA_CONFIG.coreLayers.includes(name)) continue;
+    need(typeof L?.source === "string" && L.source, `${name}: source is required`);
+    need(isNum(L?.startYear), `${name}: startYear must be a number`);
+    if (!L?.unit) warnings.push(`${name}: no "unit" given`);
+    if (!L?.monthly && !L?.yearly) { errors.push(`${name}: needs "monthly" ({year: [12 numbers]}) or "yearly" ({year: number})`); continue; }
+    for (const [y, arr] of Object.entries(L.monthly ?? {})) {
+      need(is12(arr), `${name}.monthly[${y}]: must be 12 numbers`);
+      need(+y >= L.startYear, `${name}.monthly[${y}]: before startYear ${L.startYear}`);
+    }
+    for (const [y, v] of Object.entries(L.yearly ?? {})) {
+      need(isNum(v), `${name}.yearly[${y}]: must be a number`);
+      need(+y >= L.startYear, `${name}.yearly[${y}]: before startYear ${L.startYear}`);
+    }
   }
 
   for (const key of ["tension", "interest"]) {

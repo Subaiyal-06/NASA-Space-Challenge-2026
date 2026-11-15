@@ -41,8 +41,8 @@ describe("C7: Events & Derived Prop Builders", () => {
     expect(badges.length).toBeGreaterThan(0);
     expect(badges[0].text).toContain("in our data");
 
-    // April 2013 (month 3) has earthquakes including a M7.7 quake in karachi.json
-    useClock.getState().seek(2013, 3);
+    // September 2013 (month 8) has the M7.7 Awaran quake within 300 km of Karachi (USGS data in karachi.json)
+    useClock.getState().seek(2013, 8);
     expect(quakes.length).toBeGreaterThan(0);
     expect(quakes.some((q) => q.magnitude >= 7.0)).toBe(true);
     expect(quakes[0].source).toContain("USGS");
@@ -91,7 +91,7 @@ describe("C7: Events & Derived Prop Builders", () => {
   });
 
   it("builds valid TensionMeter and Legend props with 'What am I hearing?' text", () => {
-    const snap = getSnapshot("karachi", 2013, 3);
+    const snap = getSnapshot("karachi", 2013, 8);
     const tmProps = buildTensionMeterProps({
       tension: snap.tension,
       interest: snap.interest,
@@ -103,13 +103,13 @@ describe("C7: Events & Derived Prop Builders", () => {
     const legendProps = buildLegendProps({
       cityId: "karachi",
       year: 2013,
-      month: 3,
+      month: 8,
       snapshot: snap,
       enabledLayers: ["temperature", "rainfall", "drought", "quakes", "air"],
       reduceMotion: false,
     });
     expect(validateSlotProps("Legend", legendProps)).toEqual([]);
-    expect(legendProps.explanation).toContain("Karachi, April 2013");
+    expect(legendProps.explanation).toContain("Karachi, September 2013");
     expect(legendProps.explanation).toContain("USGS");
     expect(legendProps.explanation).toContain("our own index");
   });

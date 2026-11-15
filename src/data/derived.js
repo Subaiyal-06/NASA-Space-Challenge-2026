@@ -3,6 +3,8 @@
 // Formulas follow README Section 7 (tension) and Feature 6B (interest). Both are OUR OWN indexes.
 // Months are 0-11. A layer that is missing counts as 0.
 
+import { DATA_CONFIG } from "./config.js";
+
 const clamp = (x, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, x));
 const r2 = (x) => Math.round(x * 100) / 100;
 const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
@@ -65,7 +67,7 @@ function quakeLevel(events, y, m) {
 function buildTables(city) {
   const L = city.layers;
   const normals = getRainNormals(city);
-  const events = L.earthquakes?.events ?? [];
+  const events = (L.earthquakes?.events ?? []).filter((e) => e.mag >= DATA_CONFIG.minQuakeMagnitude); // same floor as the API
   const tension = {};
   const interest = {};
   for (const y of dataYears(city)) {

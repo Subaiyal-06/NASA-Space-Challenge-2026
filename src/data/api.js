@@ -3,6 +3,7 @@
 // loadCity(id) has been called, the city id.
 import { getCityList, loadCity, getLoadedCity, getDataNotes } from "./loader.js";
 import { getBaseline, getTension, getInterest, getRecords, dataYears } from "./derived.js";
+import { DATA_CONFIG } from "./config.js";
 
 export { getCityList, loadCity, getDataNotes };
 
@@ -87,6 +88,8 @@ export function getRange(cityOrId, scenario) {
     temperature: first(L.temperature), rainfall: first(L.rainfall), drought: first(L.drought), air: first(L.air),
     quakes: quakeYears.length ? Math.min(...quakeYears) : null,
   };
+  for (const [name, layer] of Object.entries(L)) // extra layers (vegetation, aqi, nightlights, ...)
+    if (!DATA_CONFIG.coreLayers.includes(name)) layerStartYears[name] = layer.startYear ?? null;
   const starts = ["temperature", "rainfall", "drought", "air"].map((k) => layerStartYears[k]).filter((v) => v != null);
   const pts = projectionPoints(city, scenario);
   return {
@@ -126,10 +129,26 @@ export function getSnapshot(cityOrId, year, month, scenario) {
   layers.drought = { available: started(L.drought, year) && spi != null, spi: spi ?? null };
   layers.air = { available: started(L.air, year) && aod != null, aod: aod ?? null };
   layers.quakes = (L.earthquakes?.events ?? [])
-    .filter((e) => e.year === year && e.month - 1 === month)
+    .filter((e) => e.year === year && e.month - 1 === month && e.mag >= DATA_CONFIG.minQuakeMagnitude)
     .map((e) => ({ magnitude: e.mag, depth: e.depth, lat: e.lat, lon: e.lon }));
 
   return { year, month, isProjection, layers, tension: getTension(city, year, month), interest: getInterest(city, year, month) };
+}
+
+// ---------- getExtras ----------
+// Layers beyond the core five (for example vegetation = greenery, aqi, nightlights), for one month.
+// Returns { <layerName>: { available, value, unit, source } } for every extra layer the city file has.
+// This is an ADDITION to the snapshot contract: nothing existing changes, and the UI/music teammates can
+// adopt it when they are ready. Yearly layers (nightlights) give the same value for every month of a year.
+export function getExtras(cityOrId, year, month) {
+  const city = resolve(cityOrId, "getExtras");
+  const out = {};
+  for (const [name, layer] of Object.entries(city.layers)) {
+    if (DATA_CONFIG.coreLayers.includes(name)) continue;
+    const value = layer.monthly ? layer.monthly[year]?.[month] : layer.yearly?.[year];
+    out[name] = { available: started(layer, year) && value != null, value: value ?? null, unit: layer.unit ?? null, source: layer.source };
+  }
+  return out;
 }
 
 // ---------- getBaselineSnapshot ----------
@@ -156,8 +175,17 @@ export function getSeries(cityOrId, layer, fromYear, toYear) {
   const out = [];
   if (layer === "quakes") {
     for (const e of city.layers.earthquakes?.events ?? [])
-      if (e.year >= fromYear && e.year <= toYear) out.push({ year: e.year, month: e.month - 1, value: e.mag });
+      if (e.year >= fromYear && e.year <= toYear && e.mag >= DATA_CONFIG.minQuakeMagnitude) out.push({ year: e.year, month: e.month - 1, value: e.mag });
     return out.sort((a, b) => a.year - b.year || a.month - b.month);
+  }
+  const extra = city.layers[layer];
+  if (extra && !DATA_CONFIG.coreLayers.includes(layer)) { // vegetation, aqi, nightlights, ...
+    for (const y of Object.keys(extra.monthly ?? extra.yearly ?? {}).map(Number).sort((a, b) => a - b)) {
+      if (y < fromYear || y > toYear) continue;
+      if (extra.monthly) extra.monthly[y].forEach((v, m) => out.push({ year: y, month: m, value: v }));
+      else out.push({ year: y, month: 0, value: extra.yearly[y] }); // yearly layers: one point per year (January)
+    }
+    return out;
   }
   const pick = {
     temperature: (y, m) => layerValue(city.layers.temperature, y, m),

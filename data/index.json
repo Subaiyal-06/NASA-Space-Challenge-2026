@@ -2,36 +2,36 @@
   {
     "id": "karachi",
     "name": "Karachi",
-    "lat": 24.8607,
-    "lon": 67.0011,
+    "lat": 24.86,
+    "lon": 67.0,
     "file": "cities/karachi.json"
   },
   {
     "id": "lahore",
     "name": "Lahore",
-    "lat": 31.5497,
-    "lon": 74.3436,
+    "lat": 31.55,
+    "lon": 74.34,
     "file": "cities/lahore.json"
   },
   {
     "id": "islamabad",
     "name": "Islamabad",
-    "lat": 33.6844,
-    "lon": 73.0479,
+    "lat": 33.68,
+    "lon": 73.05,
     "file": "cities/islamabad.json"
   },
   {
     "id": "peshawar",
     "name": "Peshawar",
-    "lat": 34.0151,
-    "lon": 71.5249,
+    "lat": 34.01,
+    "lon": 71.58,
     "file": "cities/peshawar.json"
   },
   {
     "id": "quetta",
     "name": "Quetta",
-    "lat": 30.1798,
-    "lon": 66.975,
+    "lat": 30.18,
+    "lon": 66.99,
     "file": "cities/quetta.json"
   }
 ]

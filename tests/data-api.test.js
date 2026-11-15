@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 import sample from "../data/cities/karachi.sample.json";
 import {
-  getCityList, loadCity, getSnapshot, getRange, getBaselineSnapshot, getSeries, getMarkers, getDataNotes,
+  getCityList, loadCity, getSnapshot, getRange, getBaselineSnapshot, getSeries, getMarkers, getDataNotes, getExtras,
 } from "../src/data/api.js";
 import { getTension, getInterest, getRecords } from "../src/data/derived.js";
 import { checkCity } from "../src/data/validate.js";
+import { DATA_CONFIG } from "../src/data/config.js";
 import { applyAdapters } from "../src/data/adapters/index.js";
 
 const SNAPSHOT_KEYS = ["interest", "isProjection", "layers", "month", "tension", "year"];
@@ -15,11 +16,11 @@ describe("city list and loading (real data from the data team)", () => {
     expect(getCityList().map((c) => c.id)).toEqual(["karachi", "lahore", "islamabad", "peshawar", "quetta"]);
   });
 
-  it("loads a city, rejects unknown ones, and ignores the unsourced projection", async () => {
+  it("loads a city and rejects unknown ones; a file without a projection loads fine", async () => {
     const karachi = await loadCity("karachi");
     expect(karachi.city).toBe("Karachi");
     expect(karachi.projection).toBeUndefined();
-    expect(getDataNotes("karachi").join(" ")).toContain("projection ignored");
+    expect(getDataNotes("karachi")).toEqual([]);
     await expect(loadCity("atlantis")).rejects.toThrow(/Unknown city "atlantis"/);
   });
 
@@ -96,11 +97,12 @@ describe("derived fallbacks (data team's values always win)", () => {
 });
 
 describe("range, baseline, series, markers", () => {
-  it("getRange: real data 1981-2024, projection only with a named source", async () => {
+  it("getRange: real data 1981-2025, projection only with a named source", async () => {
     const real = await loadCity("karachi");
-    expect(getRange(real)).toMatchObject({ startYear: 1981, endYear: 2024 });
-    expect(getRange(real, "ssp245").endYear).toBe(2024); // its projection was dropped (no source)
+    expect(getRange(real)).toMatchObject({ startYear: 1981, endYear: 2025 });
+    expect(getRange(real, "ssp245").endYear).toBe(2025); // no projection in the file yet
     expect(getRange(real).layerStartYears.air).toBeNull(); // real files have no air layer yet
+    expect(getRange(real).layerStartYears.vegetation).toBe(2001); // extra layers are reported too
     expect(getRange(withSource).startYear).toBe(1900);
     expect(getRange(withSource, "ssp245").endYear).toBe(2100);
   });
@@ -117,12 +119,19 @@ describe("range, baseline, series, markers", () => {
     expect(now.isProjection).toBe(false);
   });
 
-  it("getBaselineSnapshot matches the file's baseline", async () => {
+  it("getBaselineSnapshot is the 1981-1990 average for that calendar month (derived)", async () => {
     const city = await loadCity("karachi");
     const b = getBaselineSnapshot(city, 6);
     expect(b.year).toBeNull();
-    expect(b.layers.temperature.anomaly).toBe(city.baseline.temperature[6]);
-    expect(b.layers.rainfall.value).toBe(city.baseline.rainfall[6]);
+    const avg = (layer) => [...Array(10).keys()].reduce((sum, i) => sum + city.layers[layer].monthly[1981 + i][6], 0) / 10;
+    expect(b.layers.temperature.anomaly).toBeCloseTo(avg("temperature"), 1);
+    expect(b.layers.rainfall.value).toBeCloseTo(avg("rainfall"), 1);
+  });
+
+  it("the file's own baseline wins over the derived one", async () => {
+    const city = await loadCity("karachi");
+    const forced = { ...city, baseline: { temperature: Array(12).fill(0.5), rainfall: Array(12).fill(7) } };
+    expect(getBaselineSnapshot(forced, 6).layers.rainfall.value).toBe(7);
   });
 
   it("getSeries returns month-by-month values and rejects unknown layers", async () => {
@@ -131,6 +140,7 @@ describe("range, baseline, series, markers", () => {
     expect(t).toHaveLength(24);
     expect(t[0]).toMatchObject({ year: 1981, month: 0 });
     expect(getSeries(city, "quakes", 2013, 2013).some((q) => q.value === 7.7)).toBe(true);
+    expect(getSeries(city, "quakes", 1981, 2025).every((q) => q.value >= DATA_CONFIG.minQuakeMagnitude)).toBe(true);
     expect(getSeries(city, "tension", 1990, 1990)).toHaveLength(12);
     expect(() => getSeries(city, "bogus", 1981, 1982)).toThrow(/unknown layer/);
   });
@@ -155,5 +165,46 @@ describe("adapters and validator", () => {
     const broken = structuredClone(sample);
     broken.layers.rainfall.normals = [1, 2];
     expect(checkCity(broken).errors.join(" ")).toContain("normals must be 12 numbers");
+  });
+});
+
+describe("extra layers (greenery now; aqi and night lights later) and the earthquake floor", () => {
+  it("getExtras returns the vegetation (greenery) layer with its source and unit", async () => {
+    const karachi = await loadCity("karachi");
+    const e = getExtras(karachi, 2020, 7);
+    expect(e.vegetation).toMatchObject({ available: true, unit: expect.stringContaining("NDVI") });
+    expect(e.vegetation.value).toBeCloseTo(0.1279, 4);
+    expect(e.vegetation.source).toContain("MODIS");
+    expect(getExtras(karachi, 1990, 0).vegetation).toMatchObject({ available: false, value: null }); // starts 2001
+    expect(getSeries(karachi, "vegetation", 2020, 2020)).toHaveLength(12);
+  });
+
+  it("a new monthly or yearly layer works with no code change", async () => {
+    const city = structuredClone(await loadCity("lahore"));
+    city.layers.aqi = { source: "test", unit: "AQI", startYear: 2000, monthly: { 2010: Array(12).fill(150) } };
+    city.layers.nightlights = { source: "test", unit: "radiance", startYear: 2012, yearly: { 2015: 42.5 } };
+    expect(checkCity(city).errors).toEqual([]);
+    expect(getExtras(city, 2010, 3).aqi).toMatchObject({ available: true, value: 150 });
+    expect(getExtras(city, 2015, 3).nightlights).toMatchObject({ available: true, value: 42.5 });
+    expect(getExtras(city, 2016, 3).nightlights.available).toBe(false); // no value that year
+    expect(getSeries(city, "nightlights", 2012, 2020)).toEqual([{ year: 2015, month: 0, value: 42.5 }]);
+    expect(getRange(city).layerStartYears).toMatchObject({ aqi: 2000, nightlights: 2012 });
+  });
+
+  it("the validator rejects a malformed extra layer clearly", async () => {
+    const city = structuredClone(await loadCity("lahore"));
+    city.layers.aqi = { unit: "AQI", startYear: 2000, monthly: { 2010: [1, 2] } };
+    const msg = checkCity(city).errors.join(" ");
+    expect(msg).toContain("aqi: source is required");
+    expect(msg).toContain("aqi.monthly[2010]: must be 12 numbers");
+  });
+
+  it("small earthquakes stay in the file but are not reported (Peshawar has about 3-4 per month)", async () => {
+    const peshawar = await loadCity("peshawar");
+    const all = peshawar.layers.earthquakes.events.filter((e) => e.year >= 1981);
+    const reported = getSeries(peshawar, "quakes", 1981, 2025);
+    expect(all.length).toBeGreaterThan(1500);
+    expect(reported.length).toBeLessThan(250);
+    expect(reported.length).toBe(all.filter((e) => e.mag >= DATA_CONFIG.minQuakeMagnitude).length);
   });
 });

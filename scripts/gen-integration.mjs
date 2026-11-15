@@ -131,6 +131,8 @@ ${code(`{
 - Every layer needs a \`source\` (the real dataset name), a \`startYear\` and a \`unit\`.
 - Monthly arrays have exactly 12 numbers (January first). Earthquake \`month\` is 1-12.
 - Weather values are **compared to normal** (anomalies), so include \`normals\` for rainfall.
+- **Extra layers are welcome** (for example \`vegetation\` = greenery, \`aqi\`, \`nightlights\`). Add them to the \`layers\` object with a \`source\`, \`unit\` and \`startYear\`, plus either \`monthly\` (\`{ "2001": [12 numbers] }\`) or \`yearly\` (\`{ "2012": 41.5 }\`, for annual data such as night lights). No code change is needed: the app reads them through \`getExtras(city, year, month)\` and \`getSeries(city, "vegetation", from, to)\`.
+- Earthquakes of any size may stay in the file, but the app only reports magnitude **5.5 and above** (a setting in \`src/data/config.js\`), so a very active region does not shake every month.
 - A \`projection\` **must name its source**, and the numbers must be real model output **for that city**. A projection without a source is ignored by the app.
 - Record texts always say "in our data". Label earthquakes as USGS (non-NASA).
 - Optional parts (\`tension\`, \`interest\`, \`baseline\`, \`records\`) are calculated by the app if missing. **Your values win** when present.
