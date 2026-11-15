@@ -16,6 +16,7 @@ import BadgeToast from "./ui/BadgeToast.jsx";
 import CompareCard from "./ui/CompareCard.jsx";
 import CompareControl from "./ui/CompareControl.jsx";
 import AccessMenu from "./ui/AccessMenu.jsx";
+import AboutSound from "./ui/AboutSound.jsx";
 import LiveDescription from "./ui/LiveDescription.jsx";
 import { describeMonth } from "./ui/describe.js";
 import WeatherLayer from "./weather/WeatherLayer.jsx";
@@ -151,7 +152,7 @@ export default function StudioApp() {
         </div>
       </header>
 
-      <AccessMenu description={description} />
+      <div className="toprow"><AboutSound /><AccessMenu description={description} /></div>
       {selectedId && city && <LiveDescription text={description} playing={playing} wx={wx} month={month} enabled={describeOn} />}
 
       <button type="button" role="switch" aria-checked={!reduce} className="motion-toggle" onClick={() => setMotion(reduce ? "on" : "reduced")}>

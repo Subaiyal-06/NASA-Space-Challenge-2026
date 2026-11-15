@@ -29,3 +29,4 @@ U10 | audio steadier when the window is stretched: bigger audio buffer, 0.4 s lo
 U11 | quakes per-city floor (Karachi 3->27 months), drought dust+labels, own voice per category (heat chimes, dry wind, quake crack), data-to-sound visualiser lanes, lighter audio+render for full screen | Tone, React | src/data, src/integrations/audio, src/studio | 139 tests
 U12 | accessibility mode: Accessibility menu (voice, screen-reader description, high contrast, shortcuts), live month description, chart readout follows playhead | React | src/studio/ui, src/studio/state.js | 144 tests, checked by screenshot
 U13 | accessibility check via the browser accessibility tree (25 controls all named, landmarks, live region); weather labels no longer double-announce | CDP | WeatherLayer | NVDA test left to the developer
+U14 | How it sounds page: what each sound means, calm-to-intense steps, why musical, verified data sources | React dialog | src/studio/ui/AboutSound.jsx | 147 tests
