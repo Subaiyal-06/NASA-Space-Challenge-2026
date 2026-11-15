@@ -208,3 +208,43 @@ describe("extra layers (greenery now; aqi and night lights later) and the earthq
     expect(reported.length).toBe(all.filter((e) => e.mag >= DATA_CONFIG.minQuakeMagnitude).length);
   });
 });
+
+describe("drought layer (SPI-3 computed by us from the real NASA rainfall)", () => {
+  it("is present for every city, starts in 1982 and names how it was made", async () => {
+    for (const { id } of getCityList()) {
+      const d = (await loadCity(id)).layers.drought;
+      expect(d.startYear).toBe(1982); // needs 2 earlier months of rain, so the first full year is 1982
+      expect(d.source).toContain("Computed by us");
+      expect(d.unit).toContain("SPI-3");
+      expect(Object.values(d.monthly).flat().every((v) => v >= -3 && v <= 3)).toBe(true);
+    }
+  });
+
+  it("is unavailable before 1982 and available after (the orchestra grows)", async () => {
+    const karachi = await loadCity("karachi");
+    expect(getSnapshot(karachi, 1981, 5).layers.drought.available).toBe(false);
+    expect(getSnapshot(karachi, 1982, 5).layers.drought.available).toBe(true);
+    expect(getBaselineSnapshot(karachi, 5).layers.drought.available).toBe(true);
+  });
+
+  it("is a proper standard score: average near 0, spread near 1, about 15% dry and 15% wet", async () => {
+    for (const { id } of getCityList()) {
+      const v = Object.values((await loadCity(id)).layers.drought.monthly).flat();
+      const mean = v.reduce((a, b) => a + b, 0) / v.length;
+      const sd = Math.sqrt(v.reduce((a, b) => a + (b - mean) ** 2, 0) / v.length);
+      expect(Math.abs(mean)).toBeLessThan(0.15);
+      expect(sd).toBeGreaterThan(0.85); expect(sd).toBeLessThan(1.15);
+      expect(v.filter((x) => x < -1).length / v.length).toBeGreaterThan(0.08);
+      expect(v.filter((x) => x < -1).length / v.length).toBeLessThan(0.22);
+    }
+  });
+
+  it("matches real events: the 2022 Karachi flood is very wet and the 1999-2001 Quetta drought is dry", async () => {
+    const karachi = await loadCity("karachi");
+    expect(getSnapshot(karachi, 2022, 7).layers.drought.spi).toBeGreaterThan(2); // August 2022
+    const quetta = await loadCity("quetta");
+    const avg = (y) => quetta.layers.drought.monthly[y].reduce((a, b) => a + b, 0) / 12;
+    expect(avg(2000)).toBeLessThan(-1);
+    expect(avg(1999) + avg(2000) + avg(2001)).toBeLessThan(-2);
+  });
+});
