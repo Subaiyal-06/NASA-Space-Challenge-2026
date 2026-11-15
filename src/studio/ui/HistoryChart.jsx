@@ -5,7 +5,7 @@ import { getSeries } from "../../data/api.js";
 import { toIndex, formatDate } from "./timeline.js";
 import { movingAverage, niceDomain, makeAxes, linePath, stemPath, nearestPoint, yearTicks } from "./chart.js";
 
-const H = 150;
+const H = 150; // the drawing height; narrow windows scale it with CSS
 const MINUS = "−";
 
 // How each tab is drawn. `bars` = one stem per month; otherwise a line plus a smooth 12-month average.

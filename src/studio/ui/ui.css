@@ -171,9 +171,17 @@
 .toast svg { flex: none; width: 20px; height: 20px; color: var(--sunrise); }
 @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .studio--calm .toast, .studio--calm .hist, .studio--calm .gauge__bar i { animation: none; transition: none; }
-@media (max-width: 1100px) { .rn { top: auto; bottom: 146px; right: 28px; max-height: 38vh; } .viz { display: none; } }
+
 .gauge.is-waiting { grid-template-columns: 1fr auto; align-items: baseline; gap: 0 8px; }
 .gauge.is-waiting .gauge__top { display: contents; }
 .gauge.is-waiting .gauge__top strong, .gauge.is-waiting .gauge__bar { display: none; }
 .gauge.is-waiting small { text-align: right; }
 .rn__headline { font-size: 16.5px; }
+
+/* narrow windows: the bar stacks and grows, so the cards move to the top right and the chart sits above the bar */
+@media (max-width: 1100px) {
+  .viz { display: none; }
+  .rn { top: 88px; right: 20px; width: 300px; max-height: 42vh; }
+  .hist-toggle { top: 26px; bottom: auto; left: auto; right: 236px; }
+  .hist { left: 92px; bottom: 236px; }
+}
