@@ -173,7 +173,7 @@ export default function WeatherLayer({ map, city, wx, reduce }) {
 
       {/* words for everything shown (never colour alone) */}
       {wx.labels.length > 0 && (
-        <ul className="wx-labels" aria-live="polite" style={{ left: a.cx, top: a.cy + a.ry + 18 }}>
+        <ul className="wx-labels" aria-label="Weather on the map" style={{ left: a.cx, top: a.cy + a.ry + 18 }}>
           {wx.labels.slice(0, 3).map((l) => {
             const Icon = LABEL_ICONS[l.kind];
             return <li key={l.kind} className={`wx-label wx-label--${l.kind}`}><Icon />{l.text}</li>;
