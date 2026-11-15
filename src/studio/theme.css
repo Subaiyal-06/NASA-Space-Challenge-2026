@@ -1,0 +1,92 @@
+/* Studio UI: "Twilight Earth". All colours and type come from the tokens below. */
+.studio {
+  --midnight: #0C1634; --dusk: #27336F; --mist: #EEF1FF; --needle: #FF4B4B; --sunrise: #FFC27A;
+  --rain: #5BC0FF; --heat: #FFB347; --dry: #D9A56B; --quake: #C9A2FF; --green: #62DDA0; --haze: #B8AFA6; --lights: #FFE58A;
+  --display: "Bricolage Grotesque Variable", "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --body: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Spline Sans Mono", ui-monospace, monospace;
+  --glass: rgba(12, 22, 52, 0.62);
+  --glass-line: rgba(238, 241, 255, 0.18);
+
+  position: fixed; inset: 0; overflow: hidden; color: var(--mist);
+  font-family: var(--body); font-size: 18px; line-height: 1.4;
+  background:
+    radial-gradient(1px 1px at 12% 22%, rgba(238,241,255,.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 14%, rgba(238,241,255,.4), transparent 60%),
+    radial-gradient(1.5px 1.5px at 41% 83%, rgba(238,241,255,.45), transparent 60%),
+    radial-gradient(1px 1px at 91% 67%, rgba(238,241,255,.5), transparent 60%),
+    radial-gradient(1px 1px at 24% 61%, rgba(238,241,255,.35), transparent 60%),
+    radial-gradient(120% 90% at 50% 105%, #27336F 0%, #14214D 38%, var(--midnight) 72%);
+  background-size: 340px 300px, 410px 360px, 380px 330px, 450px 400px, 300px 340px, 100% 100%;
+}
+.studio *, .studio *::before, .studio *::after { box-sizing: border-box; }
+:where(.studio) button { font: inherit; color: inherit; }
+.studio :focus-visible { outline: 3px solid var(--sunrise); outline-offset: 4px; border-radius: 999px; }
+
+.studio .stage { position: absolute; inset: 0; }
+.studio .maplibregl-canvas { outline: none; }
+.studio .maplibregl-map { background: transparent; }
+
+/* ---------- brand ---------- */
+.brand { position: absolute; top: 28px; left: 32px; display: flex; align-items: center; gap: 14px; pointer-events: none; z-index: 5; }
+.brand__mark { width: 38px; height: 38px; }
+.brand strong { display: block; font: 700 24px/1 var(--display); letter-spacing: -0.015em; }
+.brand span { display: block; margin-top: 5px; font: 400 12px/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; }
+
+/* ---------- intro ---------- */
+.intro { position: absolute; left: 0; right: 0; bottom: 11vh; display: flex; flex-direction: column; align-items: center; gap: 16px; z-index: 5; text-align: center; animation: rise 0.9s 0.3s both cubic-bezier(.2,.8,.2,1); }
+.intro p { margin: 0; font-size: 18px; opacity: 0.82; }
+.cta {
+  position: relative; display: inline-flex; align-items: center; gap: 12px; height: 62px; padding: 0 36px 0 30px;
+  border: 0; border-radius: 999px; background: var(--mist); color: var(--midnight); cursor: pointer;
+  font: 650 21px/1 var(--display); letter-spacing: -0.005em;
+  box-shadow: 0 12px 44px rgba(255, 194, 122, 0.28), 0 2px 0 rgba(255,255,255,.6) inset;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.cta svg { width: 24px; height: 24px; }
+.cta:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 16px 54px rgba(255, 194, 122, 0.4); }
+.cta::after { content: ""; position: absolute; inset: -6px; border-radius: 999px; border: 2px solid rgba(238, 241, 255, 0.5); animation: ring 2.6s ease-out infinite; pointer-events: none; }
+
+/* ---------- small pills ---------- */
+.hint, .back {
+  position: absolute; z-index: 5; margin: 0; display: inline-flex; align-items: center; gap: 8px; height: 50px; padding: 0 22px;
+  border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-line); backdrop-filter: blur(12px);
+  font: 600 17px/1 var(--body);
+}
+.hint { top: 30px; left: 50%; translate: -50% 0; animation: rise 0.7s both cubic-bezier(.2,.8,.2,1); }
+.back { top: 84px; left: 32px; cursor: pointer; transition: background 0.2s; animation: rise 0.5s both cubic-bezier(.2,.8,.2,1); }
+.back:hover { background: rgba(39, 51, 111, 0.85); }
+.back svg { width: 18px; height: 18px; }
+
+/* ---------- pins ---------- */
+.pin-anchor { pointer-events: none; transition: opacity 0.4s; }
+.pin-anchor--dim { opacity: 0.5; }
+.pin { pointer-events: auto; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; cursor: pointer; opacity: 0; transform-origin: 50% 100%; }
+.pin-anchor--in .pin { animation: pinRise 0.7s cubic-bezier(.2, 1.5, .35, 1) forwards; }
+.pin__glyph { width: 30px; height: 42px; filter: drop-shadow(0 7px 9px rgba(0, 0, 0, 0.5)); transition: transform 0.55s cubic-bezier(.2, 1.3, .3, 1); }
+.pin__name {
+  order: -1; margin-bottom: 7px; padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+  background: var(--glass); border: 1px solid var(--glass-line); backdrop-filter: blur(8px);
+  font: 650 16px/1.1 var(--body); opacity: 0; transform: translateY(6px);
+  transition: opacity 0.4s 0.25s, transform 0.55s cubic-bezier(.2, 1.3, .3, 1);
+}
+.pin-anchor--in .pin__name { opacity: 1; transform: none; }
+/* names beside the pin (not above it) for crowded cities */
+.pin { position: relative; }
+.pin-anchor--label-left .pin__name, .pin-anchor--label-right .pin__name { position: absolute; top: 6px; margin: 0; order: 0; }
+.pin-anchor--label-left .pin__name { right: calc(100% + 6px); }
+.pin-anchor--label-right .pin__name { left: calc(100% + 6px); }
+.pin-anchor--label-left.pin-anchor--selected .pin__name, .pin-anchor--label-right.pin-anchor--selected .pin__name { transform: translateY(-46px) scale(1.12); }
+.pin:hover .pin__glyph { transform: translateY(-4px); }
+.pin-anchor--selected .pin__glyph { transform: translateY(-46px); animation: bob 2.8s ease-in-out 0.6s infinite; }
+.pin-anchor--selected .pin__name { transform: translateY(-46px) scale(1.12); background: rgba(255, 75, 75, 0.9); border-color: rgba(255, 255, 255, 0.35); }
+
+/* ---------- motion ---------- */
+@keyframes pinRise { 0% { opacity: 0; transform: translateY(40px) scale(0.3); } 50% { opacity: 1; } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes ring { 0% { transform: scale(0.96); opacity: 0.8; } 100% { transform: scale(1.22); opacity: 0; } }
+@keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+.studio--calm *, .studio--calm *::before, .studio--calm *::after { animation-duration: 0.001s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; transition-delay: 0s !important; }
+@media (prefers-reduced-motion: reduce) {
+  .studio *, .studio *::before, .studio *::after { animation-duration: 0.001s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; transition-delay: 0s !important; }
+}

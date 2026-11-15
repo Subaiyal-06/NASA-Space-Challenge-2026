@@ -16,10 +16,11 @@ function createWindow() {
     },
   });
 
+  const hash = process.env.STUDIO ? "/studio" : ""; // STUDIO=1 opens our own UI
   if (process.env.ELECTRON_DEV) {
-    win.loadURL("http://localhost:5173");
+    win.loadURL("http://localhost:5173/#" + hash);
   } else {
-    win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+    win.loadFile(path.join(__dirname, "..", "dist", "index.html"), hash ? { hash } : undefined);
   }
 }
 

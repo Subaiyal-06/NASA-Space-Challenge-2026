@@ -5,6 +5,7 @@ import "./index.css";
 
 // The dev panel loads only when the address ends in #/dev (for example http://localhost:5173/#/dev).
 const DevPanel = lazy(() => import("./dev/DevPanel.jsx"));
+const StudioApp = lazy(() => import("./studio/StudioApp.jsx")); // #/studio
 
 function Root() {
   const [hash, setHash] = useState(window.location.hash);
@@ -14,6 +15,7 @@ function Root() {
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
   if (hash === "#/dev") return <Suspense fallback={null}><DevPanel /></Suspense>;
+  if (hash === "#/studio") return <Suspense fallback={null}><StudioApp /></Suspense>; // our own UI (in progress)
   return <App />;
 }
 
