@@ -12,6 +12,9 @@ export const useStudio = create((set, get) => ({
   selectedId: null,
   // "auto" = follow the computer's setting (but say so on screen), "on" = animations on, "reduced" = calm mode
   motion: readMotion(),
+  // Visual-only categories (greenery now, AQI and night lights later). true = shown. Core layers live in the clock.
+  extras: { vegetation: true, aqi: true, nightlights: true },
+  toggleExtra: (id) => set((s) => ({ extras: { ...s.extras, [id]: !s.extras[id] } })),
 
   start: () => { if (get().phase === "intro") set({ phase: "zooming" }); },
   arrived: () => set({ phase: "explore" }),

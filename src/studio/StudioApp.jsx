@@ -1,11 +1,18 @@
 // Earth Jukebox: Pakistan, the studio UI. Calm and spacious: a globe, one big button, then the cities.
-import React from "react";
+import React, { useEffect } from "react";
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/figtree";
 import "@fontsource/spline-sans-mono/400.css";
 import "./theme.css";
+import "./ui/ui.css";
 import GlobeStage from "./GlobeStage.jsx";
+import PlaybackBar from "./ui/PlaybackBar.jsx";
+import CategoryRail from "./ui/CategoryRail.jsx";
+import { useCity } from "./ui/useCity.js";
 import { useStudio, useMotion } from "./state.js";
+import { useClock } from "../state/clock.js";
+import { initAppBridge } from "../app/flow.js";
+import { attachKeyboardShortcuts } from "../app/keyboard.js";
 import { getCityList } from "../data/api.js";
 import { IMAGERY_CREDIT } from "./geo/mapStyle.js";
 
@@ -24,10 +31,26 @@ function Vinyl() {
 export default function StudioApp() {
   const { phase, selectedId, start, arrived, select, clear } = useStudio();
   const { reduce, osAsksForLess, motion, setMotion } = useMotion();
+  const scenario = useClock((s) => s.scenario);
+  const futureEnabled = useClock((s) => s.futureEnabled);
+  const { city, range, markers } = useCity(selectedId, { scenario, futureEnabled });
   const introVisible = phase === "intro" || phase === "zooming";
 
+  // Keep the music, charts and weather in step with the clock, and enable the keyboard shortcuts
+  useEffect(() => {
+    const detachBridge = initAppBridge();
+    const detachKeys = attachKeyboardShortcuts();
+    return () => { detachBridge(); detachKeys(); };
+  }, []);
+
+  // Leaving a city (or going back to the start) pauses playback
+  useEffect(() => { if (!selectedId) useClock.getState().pause(); }, [selectedId]);
+
+  // Space on a focused button should press that button, not also start playback
+  const onKeyDown = (e) => { if ((e.code === "Space" || e.key === " ") && e.target.tagName === "BUTTON") e.stopPropagation(); };
+
   return (
-    <div className={`studio${reduce ? " studio--calm" : ""}`} data-phase={phase}>
+    <div className={`studio${reduce ? " studio--calm" : ""}${selectedId && city ? " studio--bar" : ""}`} data-phase={phase} onKeyDown={onKeyDown}>
       <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} />
 
       <header className="brand">
@@ -37,6 +60,11 @@ export default function StudioApp() {
           <span>Pakistan</span>
         </div>
       </header>
+
+      <button type="button" role="switch" aria-checked={!reduce} className="motion-toggle" onClick={() => setMotion(reduce ? "on" : "reduced")}>
+        <span className="motion-toggle__knob" aria-hidden="true" />
+        Animations {reduce ? "off" : "on"}
+      </button>
 
       {introVisible && (
         <div className={`intro${phase === "zooming" ? " intro--leaving" : ""}`} aria-hidden={phase === "zooming"}>
@@ -62,6 +90,9 @@ export default function StudioApp() {
           All of Pakistan
         </button>
       )}
+
+      {selectedId && city && <CategoryRail city={city} />}
+      {selectedId && city && <PlaybackBar cityId={selectedId} range={range} markers={markers} reduce={reduce} />}
 
       <p className="credit">{IMAGERY_CREDIT}</p>
     </div>

@@ -4,7 +4,7 @@ import { easeInOutCubic, lerp, normalizeLng, spinEndLng, zoomForGlobe, zoomForSp
 export const PAKISTAN = { lng: 69.6, lat: 29.6 };
 const PAKISTAN_SPAN_DEG = 17.5; // about 20.7 to 37.1 north, plus a margin
 export const CITY_VIEW = { zoom: 9.2, pitch: 54, bearing: -16 };
-export const STAGE_PADDING = { top: 0, left: 0, right: 0, bottom: 110 }; // keeps the picture clear of the bottom bar
+export const STAGE_PADDING = { top: 0, left: 0, right: 0, bottom: 150 }; // keeps the picture clear of the bottom bar
 
 const size = (map) => { const el = map.getContainer(); return { w: el.clientWidth, h: el.clientHeight }; };
 export const globeZoom = (map) => { const { w, h } = size(map); return zoomForGlobe(Math.min(w, h)); };

@@ -5,7 +5,8 @@ Output: public/tiles/<layer>/<z>/<x>/<y>.jpg   (the app serves them from disk; a
 
 Sources (NASA GIBS, public domain, no login):
   bluemarble  Blue Marble: shaded relief + ocean depth. Whole globe at low detail, the region and Pakistan in more detail.
-  landsat     Landsat GeoCover 2000, 30 m true colour. Sharp close-ups around the five cities only.
+  landsat     Landsat GeoCover 1990, 30 m true colour. Sharp close-ups around the five cities only.
+              (The 2000 version has stripe artifacts near Karachi, so 1990 is used.)
 Imagery credit shown in the app: "NASA GIBS: Blue Marble, Landsat".
 Only tiles that exist are saved. Re-running skips tiles already downloaded.
 """
@@ -19,7 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "public", "tiles")
 GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best"
 BLUEMARBLE = GIBS + "/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg"
-LANDSAT = GIBS + "/Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/2000-12-01/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpeg"
+LANDSAT = GIBS + "/Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/1990-12-01/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpeg"
 
 REGION = (42.0, 6.0, 100.0, 48.0)  # west, south, east, north: Pakistan and a wide margin (z4-6)
 CORE = (58.0, 18.0, 82.0, 39.0)  # Pakistan itself (z7)
