@@ -10,11 +10,11 @@ import { createPins } from "./geo/pins.js";
 import { initPlate, setPlateShape, animatePlate } from "./geo/cityPlate.js";
 import { cityShape } from "./geo/shapes.js";
 
-export default function GlobeStage({ phase, cities, selectedId, onSelect, onArrived, reduceMotion }) {
+export default function GlobeStage({ phase, cities, selectedId, onSelect, onArrived, reduceMotion, onReady, onDisc }) {
   const box = useRef(null);
   const api = useRef({ amount: 0, token: 0 });
   const latest = useRef({});
-  latest.current = { phase, cities, onSelect, onArrived, reduceMotion };
+  latest.current = { phase, cities, onSelect, onArrived, reduceMotion, onReady, onDisc };
   const [ready, setReady] = useState(false);
 
   // Create the map once
@@ -30,6 +30,7 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
       map.jumpTo({ zoom: globeZoom(map) });
       api.current.pins = createPins(map, latest.current.cities, { onSelect: (id) => latest.current.onSelect(id) });
       setReady(true);
+      latest.current.onReady?.(map); // the weather overlay needs the map to place itself on the disc
     });
     const onResize = () => {
       map.resize();
@@ -72,6 +73,7 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
     const stale = () => token !== api.current.token;
     (async () => {
       if (api.current.amount > 0) { // a disc is up: lower it first
+        latest.current.onDisc?.(false); // the weather leaves with it
         await animatePlate(map, api.current.amount, 0, { duration: selectedId ? 350 : 700, reduceMotion: rm });
         api.current.amount = 0;
         if (stale()) return;
@@ -85,6 +87,7 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
       if (stale()) return;
       await animatePlate(map, 0, 1, { reduceMotion: rm });
       api.current.amount = 1;
+      if (!stale()) latest.current.onDisc?.(true); // the disc is up: the weather can appear
     })();
   }, [ready, phase, selectedId]);
 

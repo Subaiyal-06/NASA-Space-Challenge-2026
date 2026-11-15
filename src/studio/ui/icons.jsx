@@ -25,4 +25,6 @@ export const Leaf = (p) => <svg {...base} {...p}><path d="M5 19c0-8 4-13.5 14-14
 export const Haze = (p) => <svg {...base} {...p}><path d="M4 8h16M6 12.5h13M4 17h16" {...stroke} /></svg>;
 export const Lights = (p) => <svg {...base} {...p}><path d="M12 3.5a5.7 5.7 0 0 0-3.4 10.3c.6.5.9 1.2.9 2V17h5v-1.2c0-.8.3-1.5.9-2A5.7 5.7 0 0 0 12 3.5Z" fill="currentColor" /><path d="M9.8 20.2h4.4" {...stroke} /></svg>;
 
+export const Snow = (p) => <svg {...base} {...p}><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M9.5 4.8L12 7.2l2.5-2.4M9.5 19.2L12 16.8l2.5 2.4" {...stroke} /></svg>;
+
 export const CATEGORY_ICONS = { sun: Sun, rain: Rain, dry: Dry, quake: Quake, leaf: Leaf, haze: Haze, lights: Lights };

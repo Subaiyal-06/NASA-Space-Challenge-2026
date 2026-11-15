@@ -1,20 +1,25 @@
 // Earth Jukebox: Pakistan, the studio UI. Calm and spacious: a globe, one big button, then the cities.
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/figtree";
 import "@fontsource/spline-sans-mono/400.css";
 import "./theme.css";
 import "./ui/ui.css";
+import "./weather/weather.css";
 import GlobeStage from "./GlobeStage.jsx";
 import PlaybackBar from "./ui/PlaybackBar.jsx";
 import CategoryRail from "./ui/CategoryRail.jsx";
 import Visualizer from "./ui/Visualizer.jsx";
+import WeatherLayer from "./weather/WeatherLayer.jsx";
+import EdgeGlow, { beatSeconds } from "./weather/EdgeGlow.jsx";
+import { weatherFor } from "./weather/rules.js";
+import { useFx } from "./weather/fx.js";
 import { useCity } from "./ui/useCity.js";
 import { useStudio, useMotion } from "./state.js";
 import { useClock } from "../state/clock.js";
 import { initAppBridge, getAudioEngine } from "../app/flow.js";
 import { attachKeyboardShortcuts } from "../app/keyboard.js";
-import { getCityList } from "../data/api.js";
+import { getCityList, getSnapshot } from "../data/api.js";
 import { IMAGERY_CREDIT } from "./geo/mapStyle.js";
 
 const cities = getCityList();
@@ -37,6 +42,35 @@ export default function StudioApp() {
   const { city, range, markers } = useCity(selectedId, { scenario, futureEnabled });
   const introVisible = phase === "intro" || phase === "zooming";
 
+  // ---- weather: what the data says about this month, shown on the disc and at the screen edges ----
+  const [map, setMap] = useState(null);
+  const [discUp, setDiscUp] = useState(false);
+  const year = useClock((s) => s.year);
+  const month = useClock((s) => s.month);
+  const layers = useClock((s) => s.layers);
+  const speed = useClock((s) => s.speed);
+  const tension = useClock((s) => s.tension);
+  const showGreenery = useStudio((s) => s.extras.vegetation) !== false;
+  const cityMeta = useMemo(() => cities.find((c) => c.id === selectedId) ?? null, [selectedId]);
+  const wx = useMemo(() => {
+    if (!city) return weatherFor(null);
+    const snapshot = getSnapshot(city, year, month, futureEnabled ? scenario : undefined);
+    return weatherFor(snapshot, { city, enabled: layers, showGreenery });
+  }, [city, year, month, layers, showGreenery, futureEnabled, scenario]);
+
+  // An earthquake month: cracks on the disc and a short shake of the picture (not when motion is reduced)
+  const quakeCount = useFx((s) => s.quake);
+  const quakeMagnitude = useFx((s) => s.quakeMagnitude);
+  const hasQuake = !!wx.quake;
+  useEffect(() => { if (discUp && hasQuake) useFx.getState().quakeNow(wx.quake.magnitude); }, [discUp, selectedId, year, month, hasQuake]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [shaking, setShaking] = useState(false);
+  useEffect(() => {
+    if (!quakeCount || reduce) return undefined;
+    setShaking(true);
+    const t = setTimeout(() => setShaking(false), 650);
+    return () => clearTimeout(t);
+  }, [quakeCount, reduce]);
+
   // The Start click is the user action that lets sound begin: a soft drone plays while Pakistan comes into view
   const onStart = () => { Promise.resolve(getAudioEngine().start()).catch(() => {}); start(); };
 
@@ -56,7 +90,12 @@ export default function StudioApp() {
 
   return (
     <div className={`studio${reduce ? " studio--calm" : ""}${selectedId && city ? " studio--bar" : ""}`} data-phase={phase} onKeyDown={onKeyDown}>
-      <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} />
+      <div className={`stage-wrap${shaking ? " is-shaking" : ""}`} style={{ "--amp": `${Math.min(7, 2 + (quakeMagnitude - 5) * 1.6)}px` }}>
+        <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} onReady={setMap} onDisc={setDiscUp} />
+      </div>
+
+      {selectedId && city && <EdgeGlow glow={wx.glow} beatSeconds={beatSeconds(speed, tension)} reduce={reduce} />}
+      {selectedId && city && discUp && <WeatherLayer map={map} city={cityMeta} wx={wx} reduce={reduce} />}
 
       <header className="brand">
         <Vinyl />

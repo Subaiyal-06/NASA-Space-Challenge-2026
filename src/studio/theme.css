@@ -59,7 +59,7 @@
 .back svg { width: 18px; height: 18px; }
 
 /* ---------- pins ---------- */
-.pin-anchor { pointer-events: none; transition: opacity 0.4s; }
+.pin-anchor { pointer-events: none; transition: opacity 0.4s; z-index: 5; } /* above the weather tints on the disc */
 .pin-anchor--dim { opacity: 0.5; }
 .pin { pointer-events: auto; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; cursor: pointer; opacity: 0; transform-origin: 50% 100%; }
 .pin-anchor--in .pin { animation: pinRise 0.7s cubic-bezier(.2, 1.5, .35, 1) forwards; }

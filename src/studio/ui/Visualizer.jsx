@@ -20,6 +20,7 @@ export default function Visualizer({ reduce }) {
   useEffect(() => {
     const el = canvas.current;
     const ctx = el.getContext("2d");
+    if (!ctx) return undefined;
     const heights = new Array(BARS).fill(0);
     let raf = 0; let timer = 0; let last = performance.now(); let loud = false; let frame = 0;
 
