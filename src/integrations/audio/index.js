@@ -6,7 +6,7 @@
 import { computeMonthValues, ALL_LAYERS } from "./mapping.js";
 
 export default function createAudioEngine() {
-  const state = { layers: [...ALL_LAYERS], snapshot: null, tension: 0, mode: "month", pacing: "normal", muted: false, core: null, building: null };
+  const state = { layers: [...ALL_LAYERS], snapshot: null, snapshotB: null, tension: 0, mode: "month", pacing: "normal", muted: false, core: null, building: null };
 
   // Build the sound once, on first start. Returns null (and warns) if this computer cannot play audio.
   async function ensureCore() {
@@ -20,7 +20,7 @@ export default function createAudioEngine() {
         core.setMuted(state.muted);
         core.setTension(state.tension);
         core.setSkipping(state.pacing === "skipping");
-        core.applyMonth(computeMonthValues(state.snapshot, state.layers), false);
+        core.applyMonth(computeMonthValues(state.snapshot, state.layers), false, valuesB());
         state.core = core;
         return core;
       })().catch((e) => { console.warn("[audio] Could not start sound:", e?.message ?? e); state.building = null; return null; });
@@ -28,7 +28,8 @@ export default function createAudioEngine() {
     return state.building;
   }
 
-  const refresh = (fire) => state.core?.applyMonth(computeMonthValues(state.snapshot, state.layers), fire);
+  const valuesB = () => (state.snapshotB ? computeMonthValues(state.snapshotB, state.layers) : null);
+  const refresh = (fire) => state.core?.applyMonth(computeMonthValues(state.snapshot, state.layers), fire, valuesB());
 
   return {
     async start() { const core = await ensureCore(); core?.start(); },
@@ -37,6 +38,7 @@ export default function createAudioEngine() {
     // Called every time the clock moves to a new month
     setMonth(payload) {
       state.snapshot = payload.snapshotA ?? null;
+      state.snapshotB = payload.snapshotB ?? null;
       state.tension = payload.tension ?? 0;
       state.core?.setTension(state.tension);
       refresh(true);
@@ -48,7 +50,7 @@ export default function createAudioEngine() {
 
     // Optional methods
     setCity() {}, // not needed: the data arrives with every setMonth
-    setCompare() {}, // comparing two cities (second city panned right) comes later
+    setCompare() {}, // not needed: the second city arrives as snapshotB with every setMonth (city A left, city B right)
     setTension(x) { state.tension = x; state.core?.setTension(x); },
     dispose() { state.core?.dispose(); state.core = null; state.building = null; },
 

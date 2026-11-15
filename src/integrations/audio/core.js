@@ -33,6 +33,10 @@ export async function buildCore() {
 
   const layers = buildLayers(reverb, reverb); // pad, arpeggio, strings, pulse
   const instruments = buildInstruments(reverb, master, layers); // rain, quake, drought, haze, heat
+  // Compare mode: the second city plays only its own data sounds, on the right. It does not touch the shared
+  // master filter or the shared brightness (those follow city A), so a stand-in master is used.
+  const standIn = { frequency: { rampTo() {} } };
+  const instrumentsB = buildInstruments(reverb, standIn, null, { pan: 0.75 });
 
   let running = false;
   let token = 0; // so a quick stop-then-start is never undone by the old stop's timer
@@ -63,6 +67,7 @@ export async function buildCore() {
         Tone.Transport.stop();
         layers.reset();
         instruments.silence();
+        instrumentsB.silence();
         destination.volume.value = 0;
       }, 450);
     },
@@ -73,7 +78,13 @@ export async function buildCore() {
       droneFilter.frequency.rampTo(350 + 900 * t, BAR_SECONDS); // the drone gets brighter too
     },
     // values come from mapping.js; fire = a new month started, so play the one-off sounds (rain notes, quake boom)
-    applyMonth(values, fire) { instruments.apply(values, fire && running); },
+    // valuesB = the second city when comparing (A moves left, B plays on the right), else null
+    applyMonth(values, fire, valuesB = null) {
+      instruments.setPan(valuesB ? -0.75 : 0);
+      instruments.apply(values, fire && running);
+      if (valuesB) instrumentsB.apply(valuesB, fire && running);
+      else instrumentsB.silence();
+    },
     setSkipping(on) { layers.setSkipping(on); },
     setMuted(muted) { destination.mute = !!muted; },
 

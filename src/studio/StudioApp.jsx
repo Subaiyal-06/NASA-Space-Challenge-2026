@@ -13,6 +13,8 @@ import Visualizer from "./ui/Visualizer.jsx";
 import RightNow from "./ui/RightNow.jsx";
 import HistoryChart from "./ui/HistoryChart.jsx";
 import BadgeToast from "./ui/BadgeToast.jsx";
+import CompareCard from "./ui/CompareCard.jsx";
+import CompareControl from "./ui/CompareControl.jsx";
 import WeatherLayer from "./weather/WeatherLayer.jsx";
 import EdgeGlow, { beatSeconds } from "./weather/EdgeGlow.jsx";
 import { weatherFor } from "./weather/rules.js";
@@ -20,7 +22,7 @@ import { useFx } from "./weather/fx.js";
 import { useCity } from "./ui/useCity.js";
 import { useStudio, useMotion } from "./state.js";
 import { useClock } from "../state/clock.js";
-import { initAppBridge, getAudioEngine } from "../app/flow.js";
+import { initAppBridge, getAudioEngine, syncAudioToClock } from "../app/flow.js";
 import { attachKeyboardShortcuts } from "../app/keyboard.js";
 import { getCityList, getSnapshot } from "../data/api.js";
 import { IMAGERY_CREDIT } from "./geo/mapStyle.js";
@@ -57,6 +59,15 @@ export default function StudioApp() {
   const cityMeta = useMemo(() => cities.find((c) => c.id === selectedId) ?? null, [selectedId]);
   const snapshot = useMemo(() => (city ? getSnapshot(city, year, month, futureEnabled ? scenario : undefined) : null), [city, year, month, futureEnabled, scenario]);
   const wx = useMemo(() => (snapshot ? weatherFor(snapshot, { city, enabled: layers, showGreenery }) : weatherFor(null)), [snapshot, city, layers, showGreenery]);
+  // ---- compare: a second city, heard in the right ear (city A in the left) ----
+  const cityBId = useClock((s) => s.cityB);
+  const { city: cityB } = useCity(cityBId, { scenario, futureEnabled });
+  const comparing = !!(cityBId && cityB && selectedId && cityBId !== selectedId);
+  const snapshotB = useMemo(() => (comparing ? getSnapshot(cityB, year, month, futureEnabled ? scenario : undefined) : null), [comparing, cityB, year, month, futureEnabled, scenario]);
+  const wxB = useMemo(() => (snapshotB ? weatherFor(snapshotB, { city: cityB, enabled: layers, showGreenery }) : null), [snapshotB, cityB, layers, showGreenery]);
+  const pickB = async (id) => { await useClock.getState().selectCity(id, "B"); syncAudioToClock(); };
+  const clearB = () => { useClock.getState().selectCity(null, "B"); syncAudioToClock(); };
+  useEffect(() => { if (cityBId && (!selectedId || cityBId === selectedId)) clearB(); }, [selectedId, cityBId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => { if (!selectedId) setHistoryOpen(false); }, [selectedId]);
 
@@ -96,7 +107,8 @@ export default function StudioApp() {
         <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} onReady={setMap} onDisc={setDiscUp} padBottom={historyOpen ? 120 : 0} />
       </div>
 
-      {selectedId && city && <EdgeGlow glow={wx.glow} beatSeconds={beatSeconds(speed, tension)} reduce={reduce} />}
+      {selectedId && city && <EdgeGlow glow={wx.glow} beatSeconds={beatSeconds(speed, tension)} reduce={reduce} side={comparing ? "left" : undefined} />}
+      {comparing && wxB && <EdgeGlow glow={wxB.glow} beatSeconds={beatSeconds(speed, tension)} reduce={reduce} side="right" />}
       {selectedId && city && discUp && <WeatherLayer map={map} city={cityMeta} wx={wx} reduce={reduce} />}
 
       <header className="brand">
@@ -139,8 +151,17 @@ export default function StudioApp() {
 
       {phase === "explore" && <Visualizer reduce={reduce} />}
       {selectedId && city && <CategoryRail city={city} />}
-      {selectedId && city && !historyOpen && <RightNow wx={wx} snapshot={snapshot} city={city} enabled={layers} showGreenery={showGreenery} />}
-      {selectedId && city && !historyOpen && <button type="button" className="hist-toggle" onClick={() => setHistoryOpen(true)}>History</button>}
+      {selectedId && city && !historyOpen && !comparing && <RightNow wx={wx} snapshot={snapshot} city={city} enabled={layers} showGreenery={showGreenery} />}
+      {selectedId && city && !historyOpen && comparing && (
+        <CompareCard a={{ id: selectedId, name: cityMeta?.name ?? selectedId, city, snapshot, wx }} b={{ id: cityBId, name: cities.find((c) => c.id === cityBId)?.name ?? cityBId, city: cityB, snapshot: snapshotB, wx: wxB }}
+          year={year} month={month} enabled={layers} showGreenery={showGreenery} onClear={clearB} />
+      )}
+      {selectedId && city && !historyOpen && (
+        <div className="pills">
+          <button type="button" className="hist-toggle" onClick={() => setHistoryOpen(true)}>History</button>
+          <CompareControl cities={cities} cityId={selectedId} cityBId={comparing ? cityBId : null} onPick={pickB} onClear={clearB} />
+        </div>
+      )}
       {selectedId && city && historyOpen && <HistoryChart city={city} enabled={layers} range={range} onClose={() => setHistoryOpen(false)} />}
       {selectedId && city && <BadgeToast />}
       {selectedId && city && <PlaybackBar cityId={selectedId} range={range} markers={markers} reduce={reduce} />}

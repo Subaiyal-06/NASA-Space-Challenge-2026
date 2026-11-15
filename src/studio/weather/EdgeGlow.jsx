@@ -6,16 +6,17 @@ import React from "react";
 import { GLOW_COLORS } from "./rules.js";
 import { useFx } from "./fx.js";
 
-export default function EdgeGlow({ glow, beatSeconds, reduce }) {
+// side: "left" or "right" while comparing (city A fades in from the left edge, city B from the right), else the whole frame
+export default function EdgeGlow({ glow, beatSeconds, reduce, side }) {
   const flash = useFx((s) => s.flash);
   const strengths = {};
   for (const g of glow) strengths[g.type] = Math.max(strengths[g.type] ?? 0, g.strength);
   return (
-    <div className={`edge${reduce ? " edge--still" : ""}`} style={{ "--beat": `${beatSeconds.toFixed(2)}s` }} aria-hidden="true">
+    <div className={`edge${reduce ? " edge--still" : ""}${side ? ` edge--${side}` : ""}`} style={{ "--beat": `${beatSeconds.toFixed(2)}s` }} aria-hidden="true">
       {Object.entries(GLOW_COLORS).map(([type, color]) => (
         <div key={type} className="edge__layer" data-type={type} style={{ "--c": color, opacity: Math.min(1, strengths[type] ?? 0) }} />
       ))}
-      {!reduce && flash > 0 && <div key={flash} className="edge__flash" />}
+      {!reduce && flash > 0 && side !== "right" && <div key={flash} className="edge__flash" />}
     </div>
   );
 }

@@ -9,22 +9,24 @@ const clamp01 = (x) => Math.min(1, Math.max(0, x));
 // In-scale notes for the rain "drops": A minor between MIDI 72 and 88
 const RAIN_NOTES = Array.from({ length: 17 }, (_, i) => 72 + i).filter(inScale);
 
-export function buildInstruments(out, master, layers) {
+export function buildInstruments(out, master, layers, { pan = 0 } = {}) {
+  // everything goes through one stereo panner: city A sits in the middle, or on the left while comparing
+  const bus = new Tone.Panner(pan).connect(out);
   // Rain: random scale notes (soft sine "plucks") + a gentle hiss
   const rainSynth = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: "sine" },
     envelope: { attack: 0.005, decay: 0.6, sustain: 0, release: 1.2 },
     volume: -14,
-  }).connect(out);
-  const rainNoiseGain = new Tone.Gain(0).connect(new Tone.Filter(4500, "bandpass").connect(out));
+  }).connect(bus);
+  const rainNoiseGain = new Tone.Gain(0).connect(new Tone.Filter(4500, "bandpass").connect(bus));
   new Tone.Noise("pink").connect(rainNoiseGain).start();
 
   // Drought: low rumble (brown noise, low-passed)
-  const rumbleGain = new Tone.Gain(0).connect(new Tone.Filter(140, "lowpass").connect(out));
+  const rumbleGain = new Tone.Gain(0).connect(new Tone.Filter(140, "lowpass").connect(bus));
   new Tone.Noise("brown").connect(rumbleGain).start();
 
   // Air / haze: breathy noise (white noise, band-passed)
-  const hazeGain = new Tone.Gain(0).connect(new Tone.Filter(3000, "bandpass", -12).connect(out));
+  const hazeGain = new Tone.Gain(0).connect(new Tone.Filter(3000, "bandpass", -12).connect(bus));
   new Tone.Noise("white").connect(hazeGain).start();
 
   // Earthquake: deep boom + low string hit
@@ -32,12 +34,12 @@ export function buildInstruments(out, master, layers) {
     pitchDecay: 0.12, octaves: 4,
     envelope: { attack: 0.001, decay: 1.6, sustain: 0, release: 1.5 },
     volume: -4,
-  }).connect(out);
+  }).connect(bus);
   const lowString = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: "fatsawtooth", count: 3, spread: 20 },
     envelope: { attack: 0.03, decay: 1.5, sustain: 0.2, release: 3 },
     volume: -12,
-  }).connect(new Tone.Filter(350, "lowpass").connect(out));
+  }).connect(new Tone.Filter(350, "lowpass").connect(bus));
 
   const ramp = (param, v) => param.rampTo(v, BAR);
 
@@ -71,5 +73,5 @@ export function buildInstruments(out, master, layers) {
     master.frequency.rampTo(16000, 0.3);
   }
 
-  return { apply, silence };
+  return { apply, silence, setPan(p) { bus.pan.rampTo(p, 0.6); } };
 }

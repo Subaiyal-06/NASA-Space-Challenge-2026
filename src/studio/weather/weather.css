@@ -58,6 +58,8 @@
 .edge { position: absolute; inset: 0; z-index: 3; pointer-events: none; animation: edgeBreath var(--beat, 2.5s) ease-in-out infinite; }
 .edge__layer { position: absolute; inset: 0; opacity: 0; box-shadow: inset 0 0 120px 16px var(--c), inset 0 0 36px 4px var(--c); transition: opacity 1.5s ease; will-change: opacity; }
 .edge--still { animation: none; }
+.edge--left { -webkit-mask-image: linear-gradient(to right, #000 30%, transparent 62%); mask-image: linear-gradient(to right, #000 30%, transparent 62%); }
+.edge--right { -webkit-mask-image: linear-gradient(to left, #000 30%, transparent 62%); mask-image: linear-gradient(to left, #000 30%, transparent 62%); }
 @keyframes edgeBreath { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
 .edge__flash { position: absolute; inset: 0; opacity: 0; box-shadow: inset 0 0 150px 34px rgba(215, 230, 255, 0.9); animation: edgeFlash 0.5s ease-out; }
 @keyframes edgeFlash { 0% { opacity: 0; } 12% { opacity: 0.75; } 100% { opacity: 0; } }
