@@ -20,7 +20,7 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
   // Create the map once
   useEffect(() => {
     const map = new MapLibreMap({
-      container: box.current, style: buildStyle(), center: [150, 16], zoom: 1.4, pitch: 0,
+      container: box.current, style: buildStyle(latest.current.cities), center: [150, 16], zoom: 1.4, pitch: 0,
       interactive: false, attributionControl: false, fadeDuration: 0, padding: STAGE_PADDING,
     });
     api.current.map = map;
@@ -29,7 +29,6 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
       initPlate(map);
       map.jumpTo({ zoom: globeZoom(map) });
       api.current.pins = createPins(map, latest.current.cities, { onSelect: (id) => latest.current.onSelect(id) });
-      if (!latest.current.reduceMotion) api.current.stopSpin = startSpin(map);
       setReady(true);
     });
     const onResize = () => {
@@ -45,6 +44,13 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
       map.remove();
     };
   }, []);
+
+  // The globe turns slowly on the intro screen (unless motion is reduced); it stops when the swoop begins
+  useEffect(() => {
+    if (!ready) return;
+    api.current.stopSpin?.();
+    api.current.stopSpin = phase === "intro" && !reduceMotion ? startSpin(api.current.map) : null;
+  }, [ready, phase, reduceMotion]);
 
   // Intro -> swoop into Pakistan -> pins pop up (south to north)
   useEffect(() => {

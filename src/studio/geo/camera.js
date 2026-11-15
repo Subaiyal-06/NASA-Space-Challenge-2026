@@ -3,15 +3,17 @@ import { easeInOutCubic, lerp, normalizeLng, spinEndLng, zoomForGlobe, zoomForSp
 
 export const PAKISTAN = { lng: 69.6, lat: 29.6 };
 const PAKISTAN_SPAN_DEG = 17.5; // about 20.7 to 37.1 north, plus a margin
-export const CITY_VIEW = { zoom: 9.2, pitch: 58, bearing: -16 };
+export const CITY_VIEW = { zoom: 9.2, pitch: 54, bearing: -16 };
 export const STAGE_PADDING = { top: 0, left: 0, right: 0, bottom: 110 }; // keeps the picture clear of the bottom bar
 
 const size = (map) => { const el = map.getContainer(); return { w: el.clientWidth, h: el.clientHeight }; };
 export const globeZoom = (map) => { const { w, h } = size(map); return zoomForGlobe(Math.min(w, h)); };
 export const pakistanZoom = (map) => zoomForSpan(size(map).h, PAKISTAN_SPAN_DEG, 0.78);
 
+export const SPIN_DEG_PER_SECOND = 6;
+
 /** Slow idle spin. Returns a stop function. */
-export function startSpin(map, degPerSecond = 7) {
+export function startSpin(map, degPerSecond = SPIN_DEG_PER_SECOND) {
   let raf = 0;
   let last = performance.now();
   const tick = (now) => {
@@ -26,7 +28,7 @@ export function startSpin(map, degPerSecond = 7) {
 }
 
 /** The globe keeps turning while it swoops in on Pakistan. Resolves when it has arrived. */
-export function zoomIntoPakistan(map, { duration = 5600, reduceMotion = false } = {}) {
+export function zoomIntoPakistan(map, { duration = 6200, reduceMotion = false, spinDegPerSecond = SPIN_DEG_PER_SECOND } = {}) {
   const to = { lat: PAKISTAN.lat, zoom: pakistanZoom(map), pitch: 18 };
   if (reduceMotion) {
     map.jumpTo({ center: [PAKISTAN.lng, to.lat], zoom: to.zoom, pitch: to.pitch });
@@ -40,8 +42,11 @@ export function zoomIntoPakistan(map, { duration = 5600, reduceMotion = false } 
     const frame = (now) => {
       const t = Math.min(1, (now - t0) / duration);
       const e = easeInOutCubic(t);
+      // The extra term makes the turn start at the speed the globe was already spinning (no stop-and-go
+      // when Start is pressed) and still settle gently at the end: t * (1 - t)^2 has slope 1 at the start, 0 at the end.
+      const carry = -spinDegPerSecond * (duration / 1000) * t * (1 - t) * (1 - t);
       map.jumpTo({
-        center: [normalizeLng(lerp(from.lng, endLng, e)), lerp(from.lat, to.lat, e)],
+        center: [normalizeLng(lerp(from.lng, endLng, e) + carry), lerp(from.lat, to.lat, e)],
         zoom: lerp(from.zoom, to.zoom, e),
         pitch: lerp(from.pitch, to.pitch, e),
       });

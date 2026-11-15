@@ -5,9 +5,9 @@ import "@fontsource-variable/figtree";
 import "@fontsource/spline-sans-mono/400.css";
 import "./theme.css";
 import GlobeStage from "./GlobeStage.jsx";
-import { useStudio } from "./state.js";
-import { useSettings } from "../settings/index.js";
+import { useStudio, useMotion } from "./state.js";
 import { getCityList } from "../data/api.js";
+import { IMAGERY_CREDIT } from "./geo/mapStyle.js";
 
 const cities = getCityList();
 
@@ -23,11 +23,12 @@ function Vinyl() {
 
 export default function StudioApp() {
   const { phase, selectedId, start, arrived, select, clear } = useStudio();
-  const reduceMotion = useSettings((s) => s.reduceMotion);
+  const { reduce, osAsksForLess, motion, setMotion } = useMotion();
+  const introVisible = phase === "intro" || phase === "zooming";
 
   return (
-    <div className={`studio${reduceMotion ? " studio--calm" : ""}`} data-phase={phase}>
-      <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduceMotion} />
+    <div className={`studio${reduce ? " studio--calm" : ""}`} data-phase={phase}>
+      <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} />
 
       <header className="brand">
         <Vinyl />
@@ -37,14 +38,21 @@ export default function StudioApp() {
         </div>
       </header>
 
-      {phase === "intro" && (
-        <div className="intro">
-          <button type="button" className="cta" onClick={start}>
+      {introVisible && (
+        <div className={`intro${phase === "zooming" ? " intro--leaving" : ""}`} aria-hidden={phase === "zooming"}>
+          <button type="button" className="cta" onClick={start} tabIndex={phase === "zooming" ? -1 : 0}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" fill="currentColor" /></svg>
             Start listening
           </button>
           <p>Hear Pakistan&rsquo;s climate, month by month.</p>
         </div>
+      )}
+
+      {phase === "intro" && ((osAsksForLess && motion === "auto") || motion === "reduced") && (
+        <p className="motion-note">
+          {motion === "auto" ? "Animations are off because your computer asks for less motion. " : "Animations are off. "}
+          <button type="button" className="linklike" onClick={() => setMotion("on")}>Turn animations on</button>
+        </p>
       )}
 
       {phase === "explore" && !selectedId && <p className="hint">Pick a city to begin</p>}
@@ -54,6 +62,8 @@ export default function StudioApp() {
           All of Pakistan
         </button>
       )}
+
+      <p className="credit">{IMAGERY_CREDIT}</p>
     </div>
   );
 }

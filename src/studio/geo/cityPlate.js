@@ -12,7 +12,7 @@ export function initPlate(map) {
   for (const id of ["plate-shadow", "plate-body", "plate-grooves", "plate-rim", "plate-outline"]) map.addSource(id, { type: "geojson", data: EMPTY });
   map.addLayer({ id: "plate-shadow", type: "fill", source: "plate-shadow", paint: { "fill-color": "#000000", "fill-opacity": 0 } });
   map.addLayer({ id: "plate-body", type: "fill-extrusion", source: "plate-body", paint: {
-    "fill-extrusion-color": "#8A9CF7", "fill-extrusion-height": 0, "fill-extrusion-base": 0, "fill-extrusion-opacity": 1, "fill-extrusion-vertical-gradient": true } });
+    "fill-extrusion-color": "#9FB0FF", "fill-extrusion-height": 0, "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.72, "fill-extrusion-vertical-gradient": true } });
   map.addLayer({ id: "plate-grooves", type: "fill-extrusion", source: "plate-grooves", paint: {
     "fill-extrusion-color": COLORS.mist, "fill-extrusion-height": 0, "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.16 } });
   map.addLayer({ id: "plate-rim", type: "fill-extrusion", source: "plate-rim", paint: {
