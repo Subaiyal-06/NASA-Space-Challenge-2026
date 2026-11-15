@@ -35,8 +35,10 @@ export async function buildCore() {
   const instruments = buildInstruments(reverb, master, layers); // rain, quake, drought, haze, heat
   // Compare mode: the second city plays only its own data sounds, on the right. It does not touch the shared
   // master filter or the shared brightness (those follow city A), so a stand-in master is used.
+  // It is built the first time it is needed, so single-city listening does not pay for it.
   const standIn = { frequency: { rampTo() {} } };
-  const instrumentsB = buildInstruments(reverb, standIn, null, { pan: 0.75 });
+  let instrumentsB = null;
+  const ensureB = () => (instrumentsB ??= buildInstruments(reverb, standIn, null, { pan: 0.8, dry: master }));
 
   let running = false;
   let token = 0; // so a quick stop-then-start is never undone by the old stop's timer
@@ -67,7 +69,7 @@ export async function buildCore() {
         Tone.Transport.stop();
         layers.reset();
         instruments.silence();
-        instrumentsB.silence();
+        instrumentsB?.silence();
         destination.volume.value = 0;
       }, 450);
     },
@@ -78,12 +80,18 @@ export async function buildCore() {
       droneFilter.frequency.rampTo(350 + 900 * t, BAR_SECONDS); // the drone gets brighter too
     },
     // values come from mapping.js; fire = a new month started, so play the one-off sounds (rain notes, quake boom)
-    // valuesB = the second city when comparing (A moves left, B plays on the right), else null
-    applyMonth(values, fire, valuesB = null) {
-      instruments.setPan(valuesB ? -0.75 : 0);
+    // valuesB = the second city when comparing (A moves left, B plays on the right), else null.
+    // fire / fireB = that city started a new month, so play its one-off sounds.
+    applyMonth(values, fire, valuesB = null, fireB = fire) {
+      const comparing = !!valuesB;
+      instruments.setPan(comparing ? -0.8 : 0);
+      instruments.setDry(comparing ? 0.55 : 0);
       instruments.apply(values, fire && running);
-      if (valuesB) instrumentsB.apply(valuesB, fire && running);
-      else instrumentsB.silence();
+      if (comparing) {
+        const b = ensureB();
+        b.setDry(0.55);
+        b.apply(valuesB, fireB && running);
+      } else instrumentsB?.silence();
     },
     setSkipping(on) { layers.setSkipping(on); },
     setMuted(muted) { destination.mute = !!muted; },

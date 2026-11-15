@@ -10,25 +10,31 @@ import { createPins } from "./geo/pins.js";
 import { initPlate, setPlateShape, animatePlate } from "./geo/cityPlate.js";
 import { cityShape } from "./geo/shapes.js";
 
-export default function GlobeStage({ phase, cities, selectedId, onSelect, onArrived, reduceMotion, onReady, onDisc, padBottom = 0 }) {
+export default function GlobeStage({ phase, cities, selectedId, onSelect, onArrived, reduceMotion, onReady, onDisc, padBottom = 0, padLeft = 0, bare = false }) {
+  // bare = the second pane in compare mode: no pins, no intro, it just shows its own city (starts from the Pakistan view)
   const box = useRef(null);
   const api = useRef({ amount: 0, token: 0 });
   const latest = useRef({});
-  latest.current = { phase, cities, onSelect, onArrived, reduceMotion, onReady, onDisc };
+  latest.current = { phase, cities, onSelect, onArrived, reduceMotion, onReady, onDisc, bare, padBottom, padLeft };
   const [ready, setReady] = useState(false);
 
   // Create the map once
   useEffect(() => {
     const map = new MapLibreMap({
       container: box.current, style: buildStyle(latest.current.cities), center: [150, 16], zoom: 1.4, pitch: 0,
-      interactive: false, attributionControl: false, fadeDuration: 0, padding: STAGE_PADDING,
+      interactive: false, attributionControl: false, fadeDuration: 0,
+      padding: { ...STAGE_PADDING, bottom: STAGE_PADDING.bottom + latest.current.padBottom, left: latest.current.padLeft }, // the second pane starts with its final framing
     });
     api.current.map = map;
-    if (import.meta.env.DEV) window.__studio = { map, api };
+    if (import.meta.env.DEV && !latest.current.bare) window.__studio = { map, api };
     map.once("load", () => {
       initPlate(map);
       map.jumpTo({ zoom: globeZoom(map) });
-      api.current.pins = createPins(map, latest.current.cities, { onSelect: (id) => latest.current.onSelect(id) });
+      if (latest.current.bare) {
+        api.current.pins = { setSelected() {}, destroy() {}, reveal: async () => {} };
+        flyToPakistan(map, { reduceMotion: true });
+        map.jumpTo({ padding: { ...STAGE_PADDING, bottom: STAGE_PADDING.bottom + latest.current.padBottom, left: latest.current.padLeft } }); // framing is set before it flies to its city
+      } else api.current.pins = createPins(map, latest.current.cities, { onSelect: (id) => latest.current.onSelect(id) });
       setReady(true);
       latest.current.onReady?.(map); // the weather overlay needs the map to place itself on the disc
     });
@@ -57,9 +63,9 @@ export default function GlobeStage({ phase, cities, selectedId, onSelect, onArri
   useEffect(() => {
     if (!ready || phase !== "explore") return;
     const { map } = api.current;
-    const padding = { ...STAGE_PADDING, bottom: STAGE_PADDING.bottom + padBottom };
+    const padding = { ...STAGE_PADDING, bottom: STAGE_PADDING.bottom + padBottom, left: padLeft };
     if (latest.current.reduceMotion) map.jumpTo({ padding }); else map.easeTo({ padding, duration: 450 });
-  }, [ready, phase, padBottom]);
+  }, [ready, phase, padBottom, padLeft]);
 
   // Intro -> swoop into Pakistan -> pins pop up (south to north)
   useEffect(() => {

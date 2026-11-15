@@ -68,6 +68,11 @@ export default function StudioApp() {
   const pickB = async (id) => { await useClock.getState().selectCity(id, "B"); syncAudioToClock(); };
   const clearB = () => { useClock.getState().selectCity(null, "B"); syncAudioToClock(); };
   useEffect(() => { if (cityBId && (!selectedId || cityBId === selectedId)) clearB(); }, [selectedId, cityBId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The second city gets its own globe pane (right half) with its own disc and weather
+  const [mapB, setMapB] = useState(null);
+  const [discUpB, setDiscUpB] = useState(false);
+  const cityMetaB = useMemo(() => cities.find((c) => c.id === cityBId) ?? null, [cityBId]);
+  useEffect(() => { if (!comparing) { setMapB(null); setDiscUpB(false); } }, [comparing]);
   const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => { if (!selectedId) setHistoryOpen(false); }, [selectedId]);
 
@@ -76,6 +81,8 @@ export default function StudioApp() {
   const quakeMagnitude = useFx((s) => s.quakeMagnitude);
   const hasQuake = !!wx.quake;
   useEffect(() => { if (discUp && hasQuake) useFx.getState().quakeNow(wx.quake.magnitude); }, [discUp, selectedId, year, month, hasQuake]); // eslint-disable-line react-hooks/exhaustive-deps
+  const hasQuakeB = !!wxB?.quake;
+  useEffect(() => { if (discUpB && hasQuakeB) useFx.getState().quakeNow(wxB.quake.magnitude); }, [discUpB, cityBId, year, month, hasQuakeB]); // eslint-disable-line react-hooks/exhaustive-deps
   const [shaking, setShaking] = useState(false);
   useEffect(() => {
     if (!quakeCount || reduce) return undefined;
@@ -102,14 +109,30 @@ export default function StudioApp() {
   const onKeyDown = (e) => { if ((e.code === "Space" || e.key === " ") && e.target.tagName === "BUTTON") e.stopPropagation(); };
 
   return (
-    <div className={`studio${reduce ? " studio--calm" : ""}${selectedId && city ? " studio--bar" : ""}`} data-phase={phase} onKeyDown={onKeyDown}>
+    <div className={`studio${reduce ? " studio--calm" : ""}${selectedId && city ? " studio--bar" : ""}${comparing ? " studio--cmp" : ""}`} data-phase={phase} onKeyDown={onKeyDown}>
       <div className={`stage-wrap${shaking ? " is-shaking" : ""}`} style={{ "--amp": `${Math.min(7, 2 + (quakeMagnitude - 5) * 1.6)}px` }}>
-        <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} onReady={setMap} onDisc={setDiscUp} padBottom={historyOpen ? 120 : 0} />
+        <div className={`pane pane--a${comparing ? " is-split" : ""}`}>
+          <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} onReady={setMap} onDisc={setDiscUp}
+            padBottom={comparing ? 150 : historyOpen ? 120 : 0} padLeft={comparing ? 110 : 0} />
+        </div>
+        {comparing && (
+          <div className="pane pane--b">
+            <GlobeStage phase="explore" cities={cities} selectedId={cityBId} onSelect={() => {}} onArrived={() => {}} reduceMotion={reduce} onReady={setMapB} onDisc={setDiscUpB} padBottom={150} bare />
+          </div>
+        )}
       </div>
 
       {selectedId && city && <EdgeGlow glow={wx.glow} beatSeconds={beatSeconds(speed, tension)} reduce={reduce} side={comparing ? "left" : undefined} />}
       {comparing && wxB && <EdgeGlow glow={wxB.glow} beatSeconds={beatSeconds(speed, tension)} reduce={reduce} side="right" />}
-      {selectedId && city && discUp && <WeatherLayer map={map} city={cityMeta} wx={wx} reduce={reduce} />}
+      <div className={`pane-fx pane-fx--a${comparing ? " is-split" : ""}`}>
+        {selectedId && city && discUp && <WeatherLayer map={map} city={cityMeta} wx={wx} reduce={reduce} />}
+      </div>
+      {comparing && (
+        <div className="pane-fx pane-fx--b">
+          <span className="pane-name">{cityMetaB?.name}</span>
+          {discUpB && wxB && <WeatherLayer map={mapB} city={cityMetaB} wx={wxB} reduce={reduce} />}
+        </div>
+      )}
 
       <header className="brand">
         <Vinyl />
@@ -152,11 +175,11 @@ export default function StudioApp() {
       {phase === "explore" && <Visualizer reduce={reduce} />}
       {selectedId && city && <CategoryRail city={city} />}
       {selectedId && city && !historyOpen && !comparing && <RightNow wx={wx} snapshot={snapshot} city={city} enabled={layers} showGreenery={showGreenery} />}
-      {selectedId && city && !historyOpen && comparing && (
+      {selectedId && city && comparing && (
         <CompareCard a={{ id: selectedId, name: cityMeta?.name ?? selectedId, city, snapshot, wx }} b={{ id: cityBId, name: cities.find((c) => c.id === cityBId)?.name ?? cityBId, city: cityB, snapshot: snapshotB, wx: wxB }}
           year={year} month={month} enabled={layers} showGreenery={showGreenery} onClear={clearB} />
       )}
-      {selectedId && city && !historyOpen && (
+      {selectedId && city && !historyOpen && !comparing && (
         <div className="pills">
           <button type="button" className="hist-toggle" onClick={() => setHistoryOpen(true)}>History</button>
           <CompareControl cities={cities} cityId={selectedId} cityBId={comparing ? cityBId : null} onPick={pickB} onClear={clearB} />

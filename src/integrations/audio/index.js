@@ -6,7 +6,7 @@
 import { computeMonthValues, ALL_LAYERS } from "./mapping.js";
 
 export default function createAudioEngine() {
-  const state = { layers: [...ALL_LAYERS], snapshot: null, snapshotB: null, tension: 0, mode: "month", pacing: "normal", muted: false, core: null, building: null };
+  const state = { layers: [...ALL_LAYERS], snapshot: null, snapshotB: null, sigA: "", sigB: "", tension: 0, mode: "month", pacing: "normal", muted: false, core: null, building: null };
 
   // Build the sound once, on first start. Returns null (and warns) if this computer cannot play audio.
   async function ensureCore() {
@@ -20,7 +20,8 @@ export default function createAudioEngine() {
         core.setMuted(state.muted);
         core.setTension(state.tension);
         core.setSkipping(state.pacing === "skipping");
-        core.applyMonth(computeMonthValues(state.snapshot, state.layers), false, valuesB());
+        const [a, b] = valuesNow();
+        core.applyMonth(a, false, b, false);
         state.core = core;
         return core;
       })().catch((e) => { console.warn("[audio] Could not start sound:", e?.message ?? e); state.building = null; return null; });
@@ -28,20 +29,33 @@ export default function createAudioEngine() {
     return state.building;
   }
 
-  const valuesB = () => (state.snapshotB ? computeMonthValues(state.snapshotB, state.layers) : null);
-  const refresh = (fire) => state.core?.applyMonth(computeMonthValues(state.snapshot, state.layers), fire, valuesB());
+  // While comparing, both cities play at once: fewer rain notes each so the two stay clear of each other
+  const forCompare = (v, comparing) => (v && comparing ? { ...v, rainNotes: Math.ceil(v.rainNotes * 0.6) } : v);
+  const valuesNow = () => {
+    const comparing = !!state.snapshotB;
+    const a = forCompare(computeMonthValues(state.snapshot, state.layers), comparing);
+    const b = comparing ? forCompare(computeMonthValues(state.snapshotB, state.layers), true) : null;
+    return [a, b];
+  };
+  const refresh = (fireA, fireB = fireA) => { const [a, b] = valuesNow(); state.core?.applyMonth(a, fireA, b, fireB); };
 
   return {
     async start() { const core = await ensureCore(); core?.start(); },
-    stop() { state.core?.stop(); },
+    stop() { state.core?.stop(); state.sigA = ""; state.sigB = ""; }, // the next start plays its month again
 
     // Called every time the clock moves to a new month
     setMonth(payload) {
       state.snapshot = payload.snapshotA ?? null;
       state.snapshotB = payload.snapshotB ?? null;
+      // one-off sounds (rain notes, quake boom) play only when that city's month really changed, so adding or
+      // removing the second city never replays the first city's sounds
+      const key = `${payload.year}-${payload.month}`;
+      const sigA = key + JSON.stringify(state.snapshot); const sigB = key + JSON.stringify(state.snapshotB);
+      const fireA = sigA !== state.sigA; const fireB = !!state.snapshotB && sigB !== state.sigB;
+      state.sigA = sigA; state.sigB = sigB;
       state.tension = payload.tension ?? 0;
       state.core?.setTension(state.tension);
-      refresh(true);
+      refresh(fireA, fireB);
     },
     setLayers(ids) { state.layers = [...ids]; refresh(false); },
     setMode(mode) { state.mode = mode; },

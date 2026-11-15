@@ -9,9 +9,13 @@ const clamp01 = (x) => Math.min(1, Math.max(0, x));
 // In-scale notes for the rain "drops": A minor between MIDI 72 and 88
 const RAIN_NOTES = Array.from({ length: 17 }, (_, i) => 72 + i).filter(inScale);
 
-export function buildInstruments(out, master, layers, { pan = 0 } = {}) {
+export function buildInstruments(out, master, layers, { pan = 0, dry = null } = {}) {
   // everything goes through one stereo panner: city A sits in the middle, or on the left while comparing
   const bus = new Tone.Panner(pan).connect(out);
+  // While comparing, a little of each city also goes straight to the speakers (not through the shared reverb),
+  // so left and right stay clearly apart. Off (silent) when only one city is playing.
+  const dryGain = new Tone.Gain(0);
+  if (dry) { bus.connect(dryGain); dryGain.connect(dry); }
   // Rain: random scale notes (soft sine "plucks") + a gentle hiss
   const rainSynth = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: "sine" },
@@ -73,5 +77,5 @@ export function buildInstruments(out, master, layers, { pan = 0 } = {}) {
     master.frequency.rampTo(16000, 0.3);
   }
 
-  return { apply, silence, setPan(p) { bus.pan.rampTo(p, 0.6); } };
+  return { apply, silence, setPan(p) { bus.pan.rampTo(p, 0.6); }, setDry(v) { dryGain.gain.rampTo(v, 0.6); } };
 }

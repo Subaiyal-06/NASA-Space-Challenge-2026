@@ -24,3 +24,4 @@ U5 | studio step 4: weather on the disc from real monthly data (clouds in/out, r
 U6 | studio step 5: Right now card, history chart, record toasts | React, SVG, vitest | src/studio/ui, GlobeStage padBottom | plain-words gauges, click-to-jump chart, 130 tests pass
 U7 | studio polish: narrow-window layout for cards, history toggle and chart | CSS | src/studio/ui/ui.css | checked at 1440, 1280, 1024 wide
 U8 | studio compare mode: second city pill, side-by-side card, city B on the right (audio pan + edge glow) | React, Tone panner | src/studio/ui, src/integrations/audio | uses existing snapshotB in setMonth, no contract change
+U9 | compare fixes: second globe pane with its own disc and weather, strip under both, clearer left/right sound, no replayed sounds | React, Tone | src/studio, src/integrations/audio | both cities visible, stereo checked by offline render

@@ -27,8 +27,16 @@ describe("the music engine in compare mode", () => {
     const [a, , b] = core.applyMonth.mock.calls.at(-1);
     expect(a.rainLevel).toBeGreaterThan(0.5);   // Karachi's flood
     expect(b).toMatchObject({ rainLevel: expect.any(Number) }); // Lahore on the right
+    expect(core.applyMonth.mock.calls.at(-1)[1]).toBe(true);   // a new month: its one-off sounds play
+    const rainA = a.rainNotes;
     engine.setMonth({ ...payload, snapshotB: null });
-    expect(core.applyMonth.mock.calls.at(-1)[2]).toBeNull();
+    const solo = core.applyMonth.mock.calls.at(-1);
+    expect(solo[2]).toBeNull();
+    expect(solo[1]).toBe(false);                               // same month for Karachi: nothing replays
+    expect(solo[0].rainNotes).toBeGreaterThanOrEqual(rainA);   // on its own, Karachi gets its full rain notes back
+    engine.setMonth(payload);
+    expect(core.applyMonth.mock.calls.at(-1)[1]).toBe(false);  // adding Lahore does not replay Karachi...
+    expect(core.applyMonth.mock.calls.at(-1)[3]).toBe(true);   // ...but Lahore's own sounds play
   });
 });
 
@@ -46,7 +54,7 @@ describe("compare UI", () => {
     expect(box.textContent).toContain("left ear");
     expect(box.textContent).toContain("right ear");
     expect(box.textContent).toMatch(/Since 1981|Comparing/);
-    expect(box.querySelectorAll(".cmp__row").length).toBeGreaterThan(2);
+    expect(box.querySelectorAll(".cmp__tile").length).toBeGreaterThan(4);
     await unmount();
   });
 

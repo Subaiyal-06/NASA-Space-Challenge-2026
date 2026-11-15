@@ -84,11 +84,14 @@ function RainCanvas({ a, amount, reduce }) {
 }
 
 /** Lightning: a soft jagged bolt now and then, never more than one flash every 4 seconds. */
+// One governor for the whole screen, so two storms side by side still never flash more than once every 4 seconds
+const sharedGovernor = createFlashGovernor();
+
 function Lightning({ a, active }) {
   const [bolt, setBolt] = useState(null);
   useEffect(() => {
     if (!active) return undefined;
-    const gov = createFlashGovernor();
+    const gov = sharedGovernor;
     let timer = 0; let off = 0;
     const strike = () => {
       if (document.hidden || !gov.tryFlash()) return;
