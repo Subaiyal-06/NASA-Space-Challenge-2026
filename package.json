@@ -13,6 +13,7 @@
     "start": "vite build && electron .",
     "check-data": "node tests/check-data.mjs",
     "test": "vitest run --passWithNoTests",
+    "docs": "node scripts/gen-integration.mjs",
     "dist": "vite build && electron-builder --win nsis zip"
   },
   "build": {
