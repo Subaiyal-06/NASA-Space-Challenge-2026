@@ -1,15 +1,12 @@
 /**
  * CHARTS SLOT
+ * Pastel Mint & White minimal charts with Framer Motion + Lucide icons.
  * Contract props:
  *   { series, year, month, layers, mode, reduceMotion }
- *   where series = { temperature: [{ year, month, value }], rainfall: [...], ... }
- *
- * Fixes applied:
- *  - Pure SVG responsive charts (no external Chart.js dependency needed, works in JSDOM + Electron)
- *  - Continuous time positioning so the playhead marker aligns accurately with `year` and `month`
- *  - Shows both Temperature Anomaly (line/area chart) and Monthly Rainfall (12-month bar chart for current year)
  */
 import React, { useMemo } from "react";
+import { motion } from "framer-motion";
+import { CloudRain, Thermometer } from "lucide-react";
 
 const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
@@ -24,7 +21,6 @@ export default function Charts({
   const tempSeries = series?.temperature ?? [];
   const rainSeries = series?.rainfall ?? [];
 
-  // Temperature line geometry
   const tempPlot = useMemo(() => {
     if (!tempSeries.length) return null;
     const minY = -1.5;
@@ -74,15 +70,11 @@ export default function Charts({
       cursorX,
       cursorY,
       currentVal: currentPt?.value ?? null,
-      firstYear,
-      lastYear,
     };
   }, [tempSeries, year, month]);
 
-  // Rainfall 12-month bars for the current (or nearest available) year
   const rainPlot = useMemo(() => {
     if (!rainSeries.length) return null;
-    // Group by year
     const byYear = new Map();
     const monthSums = Array(12).fill(0);
     const monthCounts = Array(12).fill(0);
@@ -111,19 +103,30 @@ export default function Charts({
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px" }}>
       {/* Temperature Anomaly Chart */}
-      <div
-        style={{
-          background: "var(--ej-card-bg, rgba(13, 27, 42, 0.8))",
-          border: "1px solid var(--ej-border, rgba(255,255,255,0.09))",
-          borderRadius: "12px",
-          padding: "12px 14px",
-        }}
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.32 }}
+        className="ej-card-3d"
+        style={{ padding: "14px 16px" }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "#fdba74" }}>
-            🌡 Temperature Anomaly (°C vs baseline)
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", gap: "8px" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", fontWeight: 700, color: "#064E3B" }}>
+            <Thermometer size={15} color="#EA580C" />
+            Temperature Anomaly (°C vs baseline)
           </span>
-          <span style={{ fontSize: "11px", color: "#93c5fd", fontFamily: "monospace" }}>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#047857",
+              background: "#ECFDF5",
+              padding: "2px 8px",
+              borderRadius: "9999px",
+              border: "1px solid #BCEAD5",
+              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+            }}
+          >
             {tempPlot?.currentVal != null
               ? `${tempPlot.currentVal >= 0 ? "+" : ""}${tempPlot.currentVal.toFixed(2)}°C`
               : "NASA GISTEMP / POWER"}
@@ -133,65 +136,67 @@ export default function Charts({
         {tempPlot ? (
           <svg
             viewBox={`0 0 ${tempPlot.W} ${tempPlot.H}`}
-            style={{ width: "100%", height: "92px", display: "block" }}
+            style={{ width: "100%", height: "94px", display: "block" }}
             role="img"
             aria-label="Temperature anomaly line chart"
           >
-            {/* Zero baseline */}
             <line
               x1="0"
               y1={tempPlot.zeroY}
               x2={tempPlot.W}
               y2={tempPlot.zeroY}
-              stroke="rgba(255,255,255,0.2)"
+              stroke="#94A3B8"
               strokeDasharray="3 3"
               strokeWidth="1"
             />
-            {/* Area under curve */}
-            {tempPlot.areaPath && <path d={tempPlot.areaPath} fill="rgba(251, 146, 60, 0.2)" />}
-            {/* Line */}
-            <polyline
-              fill="none"
-              stroke="#fb923c"
-              strokeWidth="1.6"
-              points={tempPlot.polyline}
-            />
-            {/* Playhead vertical cursor */}
+            {tempPlot.areaPath && <path d={tempPlot.areaPath} fill="rgba(234, 88, 12, 0.14)" />}
+            <polyline fill="none" stroke="#EA580C" strokeWidth="1.8" points={tempPlot.polyline} />
             <line
               x1={tempPlot.cursorX}
               y1="0"
               x2={tempPlot.cursorX}
               y2={tempPlot.H}
-              stroke="#facc15"
-              strokeWidth="1.5"
+              stroke="#059669"
+              strokeWidth="1.8"
             />
-            <circle cx={tempPlot.cursorX} cy={tempPlot.cursorY} r="4.5" fill="#facc15" stroke="#000" strokeWidth="1" />
+            <circle cx={tempPlot.cursorX} cy={tempPlot.cursorY} r="4.5" fill="#059669" stroke="#FFFFFF" strokeWidth="1.5" />
           </svg>
         ) : (
-          <div style={{ height: "92px", display: "flex", alignItems: "center", color: "#64748b", fontSize: "12px" }}>
+          <div style={{ height: "94px", display: "flex", alignItems: "center", color: "#475569", fontSize: "12px" }}>
             Temperature layer muted or unavailable
           </div>
         )}
 
-        <div style={{ fontSize: "10.5px", color: "#60a5fa", opacity: 0.75, marginTop: "4px" }}>
-          NASA GISTEMP v4 / NASA POWER · Warmer anomaly raises musical pitch & filter brightness
+        <div style={{ fontSize: "10.5px", color: "#475569", marginTop: "5px" }}>
+          NASA GISTEMP v4 / NASA POWER · Warmer anomaly raises pitch & brightness
         </div>
-      </div>
+      </motion.div>
 
       {/* Rainfall Bar Chart */}
-      <div
-        style={{
-          background: "var(--ej-card-bg, rgba(13, 27, 42, 0.8))",
-          border: "1px solid var(--ej-border, rgba(255,255,255,0.09))",
-          borderRadius: "12px",
-          padding: "12px 14px",
-        }}
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.36 }}
+        className="ej-card-3d"
+        style={{ padding: "14px 16px" }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "#7dd3fc" }}>
-            🌧 Monthly Rainfall ({year})
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", gap: "8px" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", fontWeight: 700, color: "#064E3B" }}>
+            <CloudRain size={15} color="#0284C7" />
+            Monthly Rainfall ({year})
           </span>
-          <span style={{ fontSize: "11px", color: "#93c5fd", fontFamily: "monospace" }}>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#0369A1",
+              background: "#E0F2FE",
+              padding: "2px 8px",
+              borderRadius: "9999px",
+              border: "1px solid #BAE6FD",
+              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+            }}
+          >
             {rainPlot ? `${Math.round(rainPlot.values[month] ?? 0)} mm` : "NASA POWER"}
           </span>
         </div>
@@ -201,7 +206,7 @@ export default function Charts({
             role="img"
             aria-label="Monthly rainfall bar chart"
             style={{
-              height: "92px",
+              height: "94px",
               display: "grid",
               gridTemplateColumns: "repeat(12, 1fr)",
               gap: "4px",
@@ -210,7 +215,7 @@ export default function Charts({
             }}
           >
             {rainPlot.values.map((v, i) => {
-              const pct = Math.min(100, Math.max(4, (v / rainPlot.maxVal) * 100));
+              const pct = Math.min(100, Math.max(5, (v / rainPlot.maxVal) * 100));
               const normPct = Math.min(100, Math.max(2, (rainPlot.normals[i] / rainPlot.maxVal) * 100));
               const isCurrent = i === month;
               const aboveNormal = v > rainPlot.normals[i] * 1.15;
@@ -231,13 +236,13 @@ export default function Charts({
                     style={{
                       width: "100%",
                       height: `${pct}%`,
-                      borderRadius: "3px 3px 0 0",
+                      borderRadius: "4px 4px 0 0",
                       background: isCurrent
-                        ? "#facc15"
+                        ? "#059669"
                         : aboveNormal
-                        ? "#38bdf8"
-                        : "rgba(96, 165, 250, 0.45)",
-                      border: isCurrent ? "1px solid #ffffff" : "none",
+                        ? "#0EA5E9"
+                        : "#A7F3D0",
+                      border: isCurrent ? "1.5px solid #064E3B" : "none",
                       transition: reduceMotion ? "none" : "height 0.2s ease",
                     }}
                   />
@@ -249,11 +254,19 @@ export default function Charts({
                       left: 0,
                       right: 0,
                       height: "1.5px",
-                      background: "rgba(255,255,255,0.35)",
+                      background: "#064E3B",
+                      opacity: 0.4,
                       pointerEvents: "none",
                     }}
                   />
-                  <span style={{ fontSize: "9px", color: isCurrent ? "#facc15" : "#94a3b8", marginTop: "2px" }}>
+                  <span
+                    style={{
+                      fontSize: "9.5px",
+                      fontWeight: isCurrent ? 700 : 600,
+                      color: isCurrent ? "#064E3B" : "#475569",
+                      marginTop: "2px",
+                    }}
+                  >
                     {MONTHS[i]}
                   </span>
                 </div>
@@ -261,15 +274,15 @@ export default function Charts({
             })}
           </div>
         ) : (
-          <div style={{ height: "92px", display: "flex", alignItems: "center", color: "#64748b", fontSize: "12px" }}>
+          <div style={{ height: "94px", display: "flex", alignItems: "center", color: "#475569", fontSize: "12px" }}>
             Rainfall layer muted or starts in 1981
           </div>
         )}
 
-        <div style={{ fontSize: "10.5px", color: "#60a5fa", opacity: 0.75, marginTop: "4px" }}>
-          NASA POWER (mm/month) · White tick = 1981–2010 normal
+        <div style={{ fontSize: "10.5px", color: "#475569", marginTop: "5px" }}>
+          NASA POWER (mm/month) · Dark tick = 1981–2010 normal
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

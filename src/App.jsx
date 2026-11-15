@@ -1,10 +1,13 @@
-// APP COMPOSITION (Step C8, C9 & C12: Intro -> Player -> Compare layout with all 11 Slot Connectors)
+// APP COMPOSITION (Pastel Mint & White 3D Minimal UI with Framer Motion + Lucide icons)
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Contrast, Headphones, PlayCircle, Sparkles } from "lucide-react";
 import { useClock } from "./state/clock.js";
 import { useSettings } from "./settings/index.js";
 import { useAppFlow, initAppBridge } from "./app/flow.js";
 import { attachKeyboardShortcuts } from "./app/keyboard.js";
 import { getCityList, loadCity } from "./data/api.js";
+import { GlobeArtifact3D } from "./integrations/ui/Artifacts3D.jsx";
 import {
   GlobeIntroConnector,
   TimelineConnector,
@@ -52,7 +55,6 @@ export default function App() {
   useEffect(() => {
     loadCity("karachi")
       .then(() => {
-        // Ensure initial city snapshot & metrics are populated right away
         useClock.getState().selectCity(useClock.getState().cityA || "karachi", "A");
       })
       .catch(() => {});
@@ -71,9 +73,9 @@ export default function App() {
       className={highContrast ? "high-contrast" : ""}
       style={{
         minHeight: "100vh",
-        background: "var(--ej-bg, #0d1b2a)",
-        color: "var(--ej-fg, #e8f4f8)",
-        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+        background: "var(--ej-bg-gradient, #F3FBF7)",
+        color: "var(--ej-fg, #064E3B)",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
         display: "flex",
         flexDirection: "column",
       }}
@@ -88,43 +90,48 @@ export default function App() {
           gap: "10px",
           alignItems: "center",
           padding: "10px 18px",
-          background: "var(--ej-header-bg, rgba(8, 20, 36, 0.94))",
-          borderBottom: "1px solid var(--ej-border, rgba(255,255,255,0.1))",
+          background: "var(--ej-header-bg, rgba(255, 255, 255, 0.9))",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid var(--ej-border, #BCEAD5)",
+          boxShadow: "0 4px 18px rgba(6, 78, 59, 0.05)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "18px" }}>🌍</span>
-          <strong style={{ fontSize: "15px", letterSpacing: "0.2px" }}>Earth Jukebox: Pakistan</strong>
+          <GlobeArtifact3D size={28} reduceMotion={reduceMotion} />
+          <strong style={{ fontSize: "15px", letterSpacing: "-0.2px", color: "var(--ej-fg, #064E3B)" }}>
+            Earth Jukebox: Pakistan
+          </strong>
         </div>
 
-        <nav aria-label="Screen navigation" style={{ display: "flex", gap: "6px", marginLeft: "8px" }}>
+        <nav aria-label="Screen navigation" style={{ display: "flex", gap: "6px", marginLeft: "6px" }}>
           <NavBtn
             active={screen === "intro"}
             onClick={() => (returnToIntro ? returnToIntro() : setScreen("intro"))}
+            reduceMotion={reduceMotion}
           >
-            ← Globe
+            <ArrowLeft size={13} />
+            <span>Map</span>
           </NavBtn>
-          <NavBtn active={screen === "player"} onClick={() => closeCompare()}>
-            Player
+          <NavBtn active={screen === "player"} onClick={() => closeCompare()} reduceMotion={reduceMotion}>
+            <PlayCircle size={13} />
+            <span>Player</span>
           </NavBtn>
           <NavBtn
             active={screen === "compare"}
             onClick={() => openCompare(cityB || (cityA === "karachi" ? "lahore" : "karachi"))}
+            reduceMotion={reduceMotion}
           >
-            🎧 Compare
+            <Headphones size={13} />
+            <span>Compare</span>
           </NavBtn>
         </nav>
 
         {/* City Selectors */}
-        <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", marginLeft: "6px" }}>
-          <span style={{ color: "#93c5fd" }}>City A:</span>
-          <select
-            value={cityA}
-            onChange={(e) => selectCity(e.target.value, "A")}
-            style={selectStyle}
-          >
+        <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", marginLeft: "4px" }}>
+          <span style={{ color: "var(--ej-fg-muted, #475569)", fontWeight: 600 }}>City A:</span>
+          <select value={cityA} onChange={(e) => selectCity(e.target.value, "A")} style={selectStyle}>
             {cities.map((c) => (
-              <option key={c.id} value={c.id} style={{ background: "#0d1b2a", color: "#fff" }}>
+              <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
@@ -133,14 +140,14 @@ export default function App() {
 
         {screen === "compare" && (
           <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px" }}>
-            <span style={{ color: "#c4b5fd" }}>City B:</span>
+            <span style={{ color: "var(--ej-fg-muted, #475569)", fontWeight: 600 }}>City B:</span>
             <select
               value={cityB ?? "lahore"}
               onChange={(e) => selectCity(e.target.value, "B")}
-              style={{ ...selectStyle, borderColor: "rgba(139, 92, 246, 0.5)" }}
+              style={{ ...selectStyle, borderColor: "#5EEAD4" }}
             >
               {cities.map((c) => (
-                <option key={c.id} value={c.id} style={{ background: "#0d1b2a", color: "#fff" }}>
+                <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
@@ -151,23 +158,34 @@ export default function App() {
         {/* Future Projection Controls */}
         {screen !== "intro" && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer", color: "#93c5fd" }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                cursor: "pointer",
+                color: "#065F46",
+                fontWeight: 600,
+              }}
+            >
               <input
                 type="checkbox"
                 checked={futureEnabled}
                 onChange={(e) => setFutureEnabled(e.target.checked)}
+                style={{ accentColor: "#059669" }}
               />
-              🔭 Future
+              <Sparkles size={13} color="#059669" />
+              <span>Future</span>
             </label>
             {futureEnabled && (
               <select
                 value={scenario}
                 onChange={(e) => setScenario(e.target.value)}
                 aria-label="Projection scenario"
-                style={{ ...selectStyle, padding: "2px 6px", fontSize: "11.5px" }}
+                style={{ ...selectStyle, padding: "3px 7px", fontSize: "11.5px" }}
               >
-                <option value="ssp245" style={{ background: "#0d1b2a" }}>SSP2-4.5 (Lower)</option>
-                <option value="ssp585" style={{ background: "#0d1b2a" }}>SSP5-8.5 (Higher)</option>
+                <option value="ssp245">SSP2-4.5 (Lower)</option>
+                <option value="ssp585">SSP5-8.5 (Higher)</option>
               </select>
             )}
           </div>
@@ -182,37 +200,43 @@ export default function App() {
             alignItems: "center",
             gap: "10px",
             fontSize: "12px",
+            color: "var(--ej-fg-muted, #475569)",
+            fontWeight: 600,
           }}
         >
-          <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+          <label style={toggleLabelStyle}>
             <input
               type="checkbox"
               checked={reduceMotion}
               onChange={(e) => setReduceMotion(e.target.checked)}
+              style={{ accentColor: "#059669" }}
             />
             Reduce motion
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+          <label style={toggleLabelStyle}>
             <input
               type="checkbox"
               checked={showGhostAlways}
               onChange={(e) => setShowGhostAlways(e.target.checked)}
+              style={{ accentColor: "#059669" }}
             />
             Show the 1980s
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+          <label style={toggleLabelStyle}>
             <input
               type="checkbox"
               checked={voiceAnnouncer}
               onChange={(e) => setVoiceAnnouncer(e.target.checked)}
+              style={{ accentColor: "#059669" }}
             />
             Voice announcer
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+          <label style={toggleLabelStyle}>
             <input
               type="checkbox"
               checked={muted}
               onChange={(e) => setMuted(e.target.checked)}
+              style={{ accentColor: "#059669" }}
             />
             Mute
           </label>
@@ -222,55 +246,72 @@ export default function App() {
             aria-pressed={highContrast}
             title="Toggle High Contrast"
             style={{
-              padding: "3px 8px",
-              borderRadius: "6px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "4px 10px",
+              borderRadius: "8px",
               fontSize: "11.5px",
-              background: highContrast ? "#facc15" : "rgba(255,255,255,0.08)",
-              color: highContrast ? "#000000" : "#e0f2fe",
-              border: "1px solid rgba(255,255,255,0.2)",
+              background: highContrast ? "#064E3B" : "#ECFDF5",
+              color: highContrast ? "#FFFFFF" : "#065F46",
+              border: "1px solid #A7F3D0",
               cursor: "pointer",
-              fontWeight: highContrast ? 700 : 500,
+              fontWeight: 700,
             }}
           >
-            {highContrast ? "🌕 High Contrast" : "🌑 Contrast"}
+            <Contrast size={13} />
+            <span>{highContrast ? "High Contrast" : "Contrast"}</span>
           </button>
         </div>
       </header>
 
-      {/* Screen 1: Intro Globe */}
+      {/* Screen Views with Framer Motion transitions */}
       {screen === "intro" && (
-        <section data-testid="screen-intro" style={{ flex: 1 }}>
+        <motion.section
+          key="intro"
+          data-testid="screen-intro"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.25 }}
+          style={{ flex: 1, display: "flex", flexDirection: "column" }}
+        >
           <GlobeIntroConnector />
-        </section>
+        </motion.section>
       )}
 
-      {/* Screen 2: Main Player Dashboard */}
       {screen === "player" && (
-        <section
+        <motion.section
+          key="player"
           data-testid="screen-player"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.28 }}
           style={{
             position: "relative",
             zIndex: 10,
             flex: 1,
-            padding: "14px 18px",
+            padding: "16px 20px",
             display: "grid",
-            gridTemplateColumns: "minmax(270px, 310px) 1fr",
-            gap: "14px",
+            gridTemplateColumns: "minmax(280px, 330px) 1fr",
+            gap: "16px",
             alignItems: "start",
+            maxWidth: "1440px",
+            width: "100%",
+            margin: "0 auto",
           }}
         >
           <AmbientGlowConnector side="both" />
 
-          {/* Left Column: Weather Stage + Instrument Layer Toggles */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div style={{ minHeight: "250px" }}>
+          {/* Left Column: 3D Weather Stage + Instrument Layer Toggles */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ minHeight: "268px" }}>
               <WeatherLayerConnector citySlot="A" selected={true} />
             </div>
             <LayerTogglesConnector />
           </div>
 
           {/* Center / Right Column: Alerts, Tension, Timeline, Charts, Legend */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", minWidth: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", minWidth: 0 }}>
             <StoryCardConnector />
             <BadgeToastConnector />
             <TensionMeterConnector />
@@ -278,65 +319,84 @@ export default function App() {
             <ChartsConnector />
             <LegendConnector />
           </div>
-        </section>
+        </motion.section>
       )}
 
-      {/* Screen 3: Compare Two Cities */}
       {screen === "compare" && (
-        <section
+        <motion.section
+          key="compare"
           data-testid="screen-compare"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.28 }}
           style={{
             position: "relative",
             zIndex: 10,
             flex: 1,
-            padding: "14px 18px",
+            padding: "16px 20px",
             display: "flex",
             flexDirection: "column",
-            gap: "12px",
+            gap: "14px",
+            maxWidth: "1440px",
+            width: "100%",
+            margin: "0 auto",
           }}
         >
           <AmbientGlowConnector side="left" />
           <AmbientGlowConnector side="right" />
           <CompareViewConnector />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", minHeight: "230px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: "14px", minHeight: "260px" }}>
             <WeatherLayerConnector citySlot="A" selected={true} />
             <WeatherLayerConnector citySlot="B" selected={true} />
           </div>
           <TimelineConnector />
-        </section>
+        </motion.section>
       )}
     </div>
   );
 }
 
+const toggleLabelStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "5px",
+  cursor: "pointer",
+};
+
 const selectStyle = {
   padding: "4px 10px",
   borderRadius: "8px",
-  background: "rgba(14, 165, 233, 0.16)",
-  border: "1px solid rgba(56, 189, 248, 0.35)",
-  color: "#ffffff",
+  background: "#ECFDF5",
+  border: "1px solid #A7F3D0",
+  color: "#064E3B",
+  fontWeight: 600,
   fontSize: "12.5px",
   cursor: "pointer",
 };
 
-function NavBtn({ active, onClick, children }) {
+function NavBtn({ active, onClick, children, reduceMotion }) {
   return (
-    <button
+    <motion.button
       type="button"
+      whileTap={reduceMotion ? undefined : { scale: 0.96 }}
       onClick={onClick}
       aria-pressed={active}
       style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "5px",
         padding: "5px 12px",
-        borderRadius: "8px",
+        borderRadius: "9px",
         fontSize: "12.5px",
-        fontWeight: active ? 700 : 500,
-        color: active ? "#ffffff" : "#93c5fd",
-        background: active ? "rgba(14, 165, 233, 0.35)" : "rgba(255,255,255,0.05)",
-        border: `1px solid ${active ? "rgba(56, 189, 248, 0.65)" : "rgba(255,255,255,0.12)"}`,
+        fontWeight: active ? 700 : 600,
+        color: active ? "#FFFFFF" : "#065F46",
+        background: active ? "linear-gradient(135deg, #10B981, #059669)" : "#F0FDF4",
+        border: `1px solid ${active ? "#059669" : "#BCEAD5"}`,
+        boxShadow: active ? "0 3px 10px rgba(5, 150, 105, 0.24)" : "none",
         cursor: "pointer",
       }}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }

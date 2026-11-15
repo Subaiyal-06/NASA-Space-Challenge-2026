@@ -1,14 +1,13 @@
 /**
  * WEATHER LAYER SLOT
+ * Pastel Mint & White 3D Diorama edition with Framer Motion + Lucide icons.
  * Contract props:
  *   { cityId, selected, year, month, conditions, ghost, isProjection, reduceMotion }
- *   where conditions = { heatAnomaly, rainPercentile, spi, aod, quake }
- *   and ghost = null | { heatAnomaly, rainPercentile, spi, aod }
- *
- * Uses anomaly & percentile values (never raw values) and respects our C7 Ghost Weather
- * eligibility rules (`ghost` prop is already computed by `buildWeatherLayerProps`).
  */
 import React, { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Activity, CloudRain, Sparkles, Sun, Thermometer, Wind } from "lucide-react";
+import { WeatherDiorama3D } from "./Artifacts3D.jsx";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const CITY_LABELS = {
@@ -45,14 +44,13 @@ export default function WeatherLayer({
   const rainLevel = isRaining ? Math.max(0.15, Math.min(1, (rainPercentile - 50) / 50)) : 0;
   const droughtLevel = spi < -0.5 ? Math.min(1, Math.abs(spi) / 2.2) : 0;
   const airLevel = aod > 0.3 ? Math.min(1, (aod - 0.25) / 0.75) : 0;
-  const heatLevel = Math.max(0, Math.min(1, (heatAnomaly + 2.5) / 5));
 
   const ghostDiff =
     ghost && conditions?.heatAnomaly != null && ghost.heatAnomaly != null
       ? Math.round((conditions.heatAnomaly - ghost.heatAnomaly) * 10) / 10
       : null;
 
-  // Rain Canvas Animation
+  // Rain Canvas Animation (pastel teal raindrops, guarded against jsdom)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || reduceMotion) return;
@@ -67,7 +65,7 @@ export default function WeatherLayer({
 
     function resize() {
       canvas.width = canvas.offsetWidth || 280;
-      canvas.height = canvas.offsetHeight || 220;
+      canvas.height = canvas.offsetHeight || 240;
     }
     resize();
 
@@ -76,20 +74,20 @@ export default function WeatherLayer({
         x: Math.random() * canvas.width,
         y: -10,
         len: 8 + Math.random() * 14,
-        speed: 3.5 + Math.random() * 4.5 + rainLevel * 6,
-        opacity: 0.35 + rainLevel * 0.45,
+        speed: 3.4 + Math.random() * 4 + rainLevel * 5.5,
+        opacity: 0.28 + rainLevel * 0.4,
       };
     }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const targetDrops = Math.floor(rainLevel * 75);
+      const targetDrops = Math.floor(rainLevel * 64);
       while (dropsRef.current.length < targetDrops) dropsRef.current.push(spawnDrop());
-      if (dropsRef.current.length > targetDrops + 15) dropsRef.current.length = targetDrops;
+      if (dropsRef.current.length > targetDrops + 12) dropsRef.current.length = targetDrops;
 
       dropsRef.current.forEach((drop, i) => {
-        ctx.strokeStyle = `rgba(147, 197, 253, ${drop.opacity})`;
-        ctx.lineWidth = 1.3;
+        ctx.strokeStyle = `rgba(14, 116, 144, ${drop.opacity})`;
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.moveTo(drop.x, drop.y);
         ctx.lineTo(drop.x + drop.len * 0.1, drop.y + drop.len);
@@ -99,13 +97,15 @@ export default function WeatherLayer({
           dropsRef.current[i] = spawnDrop();
         }
       });
-      animRef.current = requestAnimationFrame(animate);
+
+      if (isRaining) {
+        animRef.current = requestAnimationFrame(animate);
+      }
     }
 
     if (isRaining) {
       animate();
     } else {
-      dropsRef.current = [];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
@@ -118,23 +118,28 @@ export default function WeatherLayer({
   const summaryText = describeWeather({ isHot, isCool, isRaining, rainPercentile, droughtLevel, airLevel, quake });
 
   return (
-    <div
-      role="img"
-      aria-label={`Weather stage for ${cityName}: ${summaryText}`}
+    <motion.div
+      data-testid={`weather-layer-${cityId}`}
+      aria-label={`Weather scene for ${cityName}`}
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.35 }}
+      className="ej-card-3d"
       style={{
         position: "relative",
-        minHeight: "230px",
+        width: "100%",
         height: "100%",
-        borderRadius: "12px",
+        minHeight: "268px",
+        borderRadius: "18px",
         overflow: "hidden",
-        border: selected
-          ? "1px solid var(--ej-border, rgba(56, 189, 248, 0.3))"
-          : "1px solid rgba(255,255,255,0.08)",
         background: skyGradient(isHot, isCool, isRaining, airLevel),
-        transition: reduceMotion ? "none" : "background 0.9s ease",
+        border: selected ? "1.5px solid #34D399" : "1px solid var(--ej-border, #BCEAD5)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
       }}
     >
-      {/* Rain Canvas */}
+      {/* Raindrop Canvas Overlay */}
       <canvas
         ref={canvasRef}
         style={{
@@ -144,7 +149,7 @@ export default function WeatherLayer({
           height: "100%",
           pointerEvents: "none",
           opacity: isRaining ? 1 : 0,
-          transition: "opacity 0.6s ease",
+          transition: reduceMotion ? "none" : "opacity 0.5s ease",
           zIndex: 4,
         }}
       />
@@ -152,209 +157,199 @@ export default function WeatherLayer({
       {/* Top Labels */}
       <div
         style={{
-          position: "absolute",
-          top: "12px",
-          left: "14px",
-          right: "14px",
+          position: "relative",
+          zIndex: 10,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          zIndex: 10,
+          padding: "12px 14px 4px 14px",
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: "14.5px", color: "#ffffff", textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}>
-          {cityName}
-        </span>
-        <span style={{ fontSize: "12px", color: "#bae6fd", fontFamily: "monospace" }}>
-          {isProjection ? `🔭 ${year} (Projection)` : `${MONTHS[month] ?? "Jan"} ${year}`}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span
+            style={{
+              width: "10px",
+              height: "10px",
+              borderRadius: "50%",
+              background: isHot ? "#EA580C" : isRaining ? "#0284C7" : "#10B981",
+              boxShadow: "0 0 0 3px rgba(255,255,255,0.75)",
+            }}
+          />
+          <span style={{ fontWeight: 700, fontSize: "15px", color: "#064E3B" }}>{cityName}</span>
+        </div>
+
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+            fontSize: "11.5px",
+            fontWeight: 700,
+            color: isProjection ? "#9A3412" : "#047857",
+            background: isProjection ? "#FFEDD5" : "#FFFFFF",
+            border: `1px solid ${isProjection ? "#FDBA74" : "#BCEAD5"}`,
+            padding: "3px 9px",
+            borderRadius: "9999px",
+            fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+          }}
+        >
+          {isProjection && <Sparkles size={12} />}
+          {isProjection ? `${year} (Projection)` : `${MONTHS[month] ?? "Jan"} ${year}`}
         </span>
       </div>
 
-      {/* Sun / Heat Orb */}
-      {!isRaining && (
-        <div
-          style={{
-            position: "absolute",
-            top: "22%",
-            right: "20%",
-            width: `${42 + heatLevel * 52}px`,
-            height: `${42 + heatLevel * 52}px`,
-            borderRadius: "50%",
-            background: isHot ? `hsl(${32 - heatLevel * 14}, 100%, 62%)` : isCool ? "#93c5fd" : "#fde68a",
-            boxShadow: isHot
-              ? `0 0 ${24 + heatLevel * 40}px rgba(251, 146, 60, 0.8)`
-              : "0 0 20px rgba(253, 230, 138, 0.5)",
-            opacity: 0.88,
-            transition: reduceMotion ? "none" : "all 0.8s ease",
-            zIndex: 3,
-          }}
+      {/* Center 3D Weather Diorama */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2px 12px",
+        }}
+      >
+        <WeatherDiorama3D
+          isHot={isHot}
+          isCool={isCool}
+          isRaining={isRaining}
+          rainLevel={rainLevel}
+          droughtLevel={droughtLevel}
+          airLevel={airLevel}
+          quake={quake}
+          ghost={ghost}
+          reduceMotion={reduceMotion}
         />
-      )}
 
-      {/* Ghost Weather (1981-1990 baseline comparison) */}
-      {ghost && (
-        <div
-          data-testid="ghost-weather"
-          style={{
-            position: "absolute",
-            top: "22%",
-            left: "16px",
-            zIndex: 8,
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "6px 10px",
-            borderRadius: "10px",
-            background: "rgba(13, 27, 42, 0.72)",
-            border: "1.5px dashed rgba(186, 230, 253, 0.5)",
-          }}
-        >
-          <div
+        {/* Ghost Weather Badge (1981-1990 baseline comparison) */}
+        {ghost && (
+          <motion.div
+            data-testid="ghost-weather"
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
             style={{
-              width: "22px",
-              height: "22px",
-              borderRadius: "50%",
-              background: "rgba(254, 240, 138, 0.45)",
-              border: "1px dashed rgba(255,255,255,0.6)",
+              position: "absolute",
+              top: "4px",
+              left: "12px",
+              zIndex: 8,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "6px 10px",
+              borderRadius: "12px",
+              background: "rgba(255, 255, 255, 0.9)",
+              border: "1.5px dashed #10B981",
+              boxShadow: "0 4px 12px rgba(6, 78, 59, 0.08)",
             }}
-          />
-          <div style={{ fontSize: "10.5px", lineHeight: 1.3 }}>
-            <div style={{ color: "#bae6fd", opacity: 0.85 }}>1980s normal ghost</div>
-            {ghostDiff != null && (
-              <div style={{ color: ghostDiff >= 0 ? "#fdba74" : "#93c5fd", fontWeight: 700 }}>
-                {ghostDiff >= 0 ? `+${ghostDiff}` : ghostDiff}°C vs 1980s
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Rain Clouds */}
-      {isRaining && (
-        <>
-          {[
-            { left: "12%", top: "16%", w: 72 + rainLevel * 30 },
-            { left: "44%", top: "12%", w: 64 + rainLevel * 28 },
-            { left: "68%", top: "20%", w: 56 + rainLevel * 24 },
-          ].map((c, i) => (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                left: c.left,
-                top: c.top,
-                width: `${c.w}px`,
-                height: `${c.w * 0.55}px`,
-                borderRadius: "9999px",
-                background: rainLevel > 0.5 ? "#334155" : "#64748b",
-                opacity: 0.75,
-                filter: "blur(5px)",
-                zIndex: 3,
-              }}
-            />
-          ))}
-        </>
-      )}
-
-      {/* Drought Ground Cracks Overlay */}
-      {droughtLevel > 0.2 && (
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: "36%",
-            background: `linear-gradient(to top, rgba(120, 75, 18, ${droughtLevel * 0.65}), transparent)`,
-            zIndex: 3,
-          }}
-        />
-      )}
-
-      {/* Air Haze Overlay */}
-      {airLevel > 0.15 && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `rgba(115, 95, 65, ${airLevel * 0.45})`,
-            pointerEvents: "none",
-            zIndex: 5,
-          }}
-        />
-      )}
-
-      {/* Earthquake Ripple (USGS labeled) */}
-      {quake && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-            zIndex: 7,
-          }}
-        >
-          {[0, 1, 2].slice(0, reduceMotion ? 1 : 3).map((i) => (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                width: `${48 + i * 34}px`,
-                height: `${48 + i * 34}px`,
-                borderRadius: "50%",
-                border: "2px solid rgba(251, 191, 36, 0.75)",
-                boxShadow: "0 0 12px rgba(251, 191, 36, 0.35)",
-              }}
-            />
-          ))}
-        </div>
-      )}
+          >
+            <Sun size={15} color="#059669" />
+            <div style={{ fontSize: "10.5px", lineHeight: 1.3 }}>
+              <div style={{ color: "#065F46", fontWeight: 600 }}>1980s normal ghost</div>
+              {ghostDiff != null && (
+                <div style={{ color: ghostDiff >= 0 ? "#C2410C" : "#0369A1", fontWeight: 700 }}>
+                  {ghostDiff >= 0 ? `+${ghostDiff}` : ghostDiff}°C vs 1980s
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </div>
 
       {/* Bottom Condition Summary */}
       <div
         style={{
-          position: "absolute",
-          bottom: "12px",
-          left: "14px",
-          right: "14px",
+          position: "relative",
           zIndex: 10,
-          background: "rgba(8, 20, 36, 0.65)",
-          backdropFilter: "blur(4px)",
-          padding: "8px 10px",
-          borderRadius: "8px",
-          border: "1px solid rgba(255,255,255,0.08)",
+          margin: "0 12px 12px 12px",
+          background: "rgba(255, 255, 255, 0.9)",
+          backdropFilter: "blur(6px)",
+          padding: "9px 12px",
+          borderRadius: "12px",
+          border: "1px solid #D1FAE5",
         }}
       >
-        <div style={{ fontSize: "12px", fontWeight: 600, color: "#ffffff" }}>{summaryText}</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "4px", fontSize: "11px" }}>
+        <div style={{ fontSize: "12px", fontWeight: 700, color: "#064E3B" }}>{summaryText}</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "6px", fontSize: "11px" }}>
           {conditions?.heatAnomaly != null && (
-            <span style={{ color: isHot ? "#fca5a5" : "#93c5fd" }}>
-              🌡 {conditions.heatAnomaly >= 0 ? `+${conditions.heatAnomaly}` : conditions.heatAnomaly}°C vs normal
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "2px 7px",
+                borderRadius: "9999px",
+                background: isHot ? "#FFEDD5" : "#E0F2FE",
+                color: isHot ? "#9A3412" : "#075985",
+                fontWeight: 600,
+              }}
+            >
+              <Thermometer size={12} />
+              {conditions.heatAnomaly >= 0 ? `+${conditions.heatAnomaly}` : conditions.heatAnomaly}°C vs normal
             </span>
           )}
           {conditions?.rainPercentile != null && (
-            <span style={{ color: "#7dd3fc" }}>🌧 {conditions.rainPercentile}th pct rain</span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "2px 7px",
+                borderRadius: "9999px",
+                background: "#ECFEFF",
+                color: "#0E7490",
+                fontWeight: 600,
+              }}
+            >
+              <CloudRain size={12} />
+              {conditions.rainPercentile}th pct rain
+            </span>
+          )}
+          {airLevel > 0.25 && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "2px 7px",
+                borderRadius: "9999px",
+                background: "#F1F5F9",
+                color: "#334155",
+                fontWeight: 600,
+              }}
+            >
+              <Wind size={12} />
+              Elevated aerosols
+            </span>
           )}
           {quake && (
-            <span style={{ color: "#fde047", fontWeight: 600 }}>
-              🌋 M{quake.magnitude} ({quake.source || "USGS, non-NASA"})
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "2px 7px",
+                borderRadius: "9999px",
+                background: "#FEF3C7",
+                color: "#92400E",
+                fontWeight: 700,
+              }}
+            >
+              <Activity size={12} />
+              M{quake.magnitude} ({quake.source || "USGS, non-NASA"})
             </span>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function skyGradient(isHot, isCool, isRaining, airLevel) {
-  if (isRaining) return "linear-gradient(to bottom, #1e293b, #334155)";
-  if (airLevel > 0.45) return "linear-gradient(to bottom, #292524, #44403c)";
-  if (isHot) return "linear-gradient(to bottom, #7c2d12, #1c1917)";
-  if (isCool) return "linear-gradient(to bottom, #1e3a5f, #0f172a)";
-  return "linear-gradient(to bottom, #0f2744, #0d1b2a)";
+  if (isRaining) return "linear-gradient(165deg, #E0F2FE 0%, #ECFDF5 65%, #FFFFFF 100%)";
+  if (airLevel > 0.45) return "linear-gradient(165deg, #F1F5F9 0%, #ECFDF5 70%, #FFFFFF 100%)";
+  if (isHot) return "linear-gradient(165deg, #FFF7ED 0%, #ECFDF5 65%, #FFFFFF 100%)";
+  if (isCool) return "linear-gradient(165deg, #ECFEFF 0%, #F0FDF4 65%, #FFFFFF 100%)";
+  return "linear-gradient(165deg, #D1FAE5 0%, #ECFDF5 58%, #FFFFFF 100%)";
 }
 
 function describeWeather({ isHot, isCool, isRaining, rainPercentile, droughtLevel, airLevel, quake }) {

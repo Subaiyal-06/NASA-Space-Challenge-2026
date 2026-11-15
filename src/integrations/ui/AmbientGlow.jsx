@@ -1,29 +1,25 @@
 /**
  * AMBIENT GLOW SLOT
- * Contract props:
- *   { states, side, beatPhase, reduceMotion }
- *   where states = [{ type, strength }], side = "both" | "left" | "right"
- *
- * Fixes applied:
- *  - Uses `side` ("both" | "left" | "right") and blended `states` from `buildAmbientGlowProps`
- *    so Compare Mode properly renders City A on the left edge and City B on the right edge!
+ * Pastel edge wash driven by climate conditions & Stereo Compare sides.
+ * Contract props: { states, side, beatPhase, reduceMotion }
  */
 import React from "react";
+import { motion } from "framer-motion";
 
 const STATE_RGB = {
-  "heavy-rain": [37, 99, 235],
-  "light-rain": [96, 165, 250],
-  hot: [234, 88, 12],
-  cool: [56, 189, 248],
-  drought: [180, 83, 9],
-  haze: [148, 163, 184],
-  quake: [250, 204, 21],
-  calm: [14, 165, 233],
+  "heavy-rain": [14, 165, 233],
+  "light-rain": [56, 189, 248],
+  hot: [249, 115, 22],
+  cool: [20, 184, 166],
+  drought: [217, 119, 6],
+  haze: [100, 116, 139],
+  quake: [234, 179, 8],
+  calm: [16, 185, 129],
 };
 
 function blendStates(states = []) {
   if (!Array.isArray(states) || !states.length) {
-    return "rgba(14, 165, 233, 0.14)";
+    return "rgba(16, 185, 129, 0.14)";
   }
   let totalW = 0;
   let r = 0;
@@ -44,7 +40,7 @@ function blendStates(states = []) {
   r = Math.round(r / totalW);
   g = Math.round(g / totalW);
   b = Math.round(b / totalW);
-  const alpha = Math.min(0.5, 0.12 + maxStrength * 0.35);
+  const alpha = Math.min(0.28, 0.08 + maxStrength * 0.18);
   return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2)})`;
 }
 
@@ -55,34 +51,34 @@ export default function AmbientGlow({
   reduceMotion = false,
 }) {
   const color = blendStates(states);
-  const pulseBoost = reduceMotion ? 1 : 1 + Math.sin(beatPhase * Math.PI * 2) * 0.08;
+  const pulseOpacity = reduceMotion ? 0.9 : 0.85 + Math.sin(beatPhase * Math.PI * 2) * 0.12;
 
   let background;
   if (side === "left") {
-    background = `radial-gradient(ellipse 55% 95% at 0% 50%, ${color} 0%, transparent 70%)`;
+    background = `radial-gradient(ellipse 50% 90% at 0% 50%, ${color} 0%, transparent 72%)`;
   } else if (side === "right") {
-    background = `radial-gradient(ellipse 55% 95% at 100% 50%, ${color} 0%, transparent 70%)`;
+    background = `radial-gradient(ellipse 50% 90% at 100% 50%, ${color} 0%, transparent 72%)`;
   } else {
     background = `
-      radial-gradient(ellipse 65% 90% at 0% 50%, ${color} 0%, transparent 60%),
-      radial-gradient(ellipse 65% 90% at 100% 50%, ${color} 0%, transparent 60%),
-      radial-gradient(ellipse 90% 45% at 50% 0%, ${color} 0%, transparent 55%),
-      radial-gradient(ellipse 90% 45% at 50% 100%, ${color} 0%, transparent 55%)
+      radial-gradient(ellipse 55% 85% at 0% 50%, ${color} 0%, transparent 65%),
+      radial-gradient(ellipse 55% 85% at 100% 50%, ${color} 0%, transparent 65%),
+      radial-gradient(ellipse 85% 40% at 50% 0%, ${color} 0%, transparent 58%)
     `;
   }
 
   return (
-    <div
+    <motion.div
       data-testid={`ambient-glow-${side}`}
       aria-hidden="true"
+      animate={{ opacity: pulseOpacity }}
+      transition={{ duration: reduceMotion ? 0 : 0.45, ease: "easeOut" }}
       style={{
         position: "fixed",
         inset: 0,
         zIndex: 0,
         pointerEvents: "none",
         background,
-        opacity: pulseBoost,
-        transition: reduceMotion ? "none" : "background 0.8s ease, opacity 0.4s ease",
+        transition: reduceMotion ? "none" : "background 0.8s ease",
       }}
     />
   );

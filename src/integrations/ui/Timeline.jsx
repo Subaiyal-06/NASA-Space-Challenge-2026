@@ -1,20 +1,39 @@
 /**
  * TIMELINE SLOT
+ * Pastel Mint & White minimal 3D transport bar with Framer Motion + Lucide icons.
  * Contract props:
  *   { year, month, startYear, endYear, mode, playing, speed, pacing, markers,
  *     onToggle, onStep, onSeek, onLeap, onModeChange, onSpeedChange, reduceMotion }
  */
 import React, { useCallback, useRef } from "react";
+import { motion } from "framer-motion";
+import {
+  BookOpen,
+  Calendar,
+  CalendarRange,
+  FastForward,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SPEEDS = [1, 2, 4];
 const MARKER_COLORS = {
-  earthquake: "#f59e0b",
-  flood: "#3b82f6",
-  heat: "#ef4444",
-  air: "#a3a3a3",
-  drought: "#d97706",
+  earthquake: "#D97706",
+  flood: "#0284C7",
+  heat: "#EA580C",
+  air: "#64748B",
+  drought: "#B45309",
 };
+
+const MODE_OPTIONS = [
+  { id: "month", label: "Month", Icon: Calendar },
+  { id: "year", label: "Year", Icon: CalendarRange },
+  { id: "story", label: "Story", Icon: BookOpen },
+];
 
 export default function Timeline({
   year = 1981,
@@ -55,17 +74,15 @@ export default function Timeline({
     [safeStart, totalMonths, onSeek]
   );
 
-  // Build tick years along the scrubber
   const tickYears = [];
   const span = safeEnd - safeStart;
-  const stepY = span > 60 ? 10 : span > 30 ? 5 : 5;
+  const stepY = span > 60 ? 10 : 5;
   for (let y = Math.ceil(safeStart / stepY) * stepY; y <= safeEnd; y += stepY) {
     tickYears.push(y);
   }
   if (!tickYears.includes(safeStart)) tickYears.unshift(safeStart);
   if (!tickYears.includes(safeEnd)) tickYears.push(safeEnd);
 
-  // Filter stories to valid range (connector already filters by city via getMarkers)
   const storyDots = (markers?.stories ?? [])
     .filter((s) => s.year >= safeStart && s.year <= safeEnd)
     .map((s, idx) => {
@@ -75,19 +92,20 @@ export default function Timeline({
         id: s.id || `${s.year}-${s.month}-${idx}`,
         frac,
         title: `${s.title} (${s.year})`,
-        color: MARKER_COLORS[s.type] ?? "#facc15",
+        color: MARKER_COLORS[s.type] ?? "#059669",
       };
     });
 
   return (
-    <div
+    <motion.div
       role="region"
       aria-label="Timeline player"
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.3 }}
+      className="ej-card-3d"
       style={{
-        background: "var(--ej-card-bg, rgba(13, 27, 42, 0.85))",
-        border: "1px solid var(--ej-border, rgba(255,255,255,0.1))",
-        borderRadius: "12px",
-        padding: "14px 18px",
+        padding: "16px 18px",
       }}
     >
       {/* Top Row: Current Date, Mode Switcher, Speed & Smart Pacing Indicator */}
@@ -98,103 +116,117 @@ export default function Timeline({
           alignItems: "center",
           justifyContent: "space-between",
           gap: "10px",
-          marginBottom: "12px",
+          marginBottom: "14px",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span
             style={{
-              padding: "4px 12px",
+              padding: "5px 13px",
               borderRadius: "9999px",
-              background: "rgba(14, 165, 233, 0.18)",
-              border: "1px solid rgba(14, 165, 233, 0.4)",
-              fontFamily: "monospace",
+              background: "#ECFDF5",
+              border: "1px solid #A7F3D0",
+              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
               fontSize: "14px",
               fontWeight: 700,
-              color: "var(--ej-fg, #e0f2fe)",
+              color: "#064E3B",
             }}
           >
             {MONTHS[month] ?? "Jan"} {year}
           </span>
 
           {pacing === "skipping" && (
-            <span
+            <motion.span
               role="status"
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
               style={{
-                padding: "3px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "4px 10px",
                 borderRadius: "9999px",
                 fontSize: "11.5px",
-                background: "rgba(139, 92, 246, 0.22)",
-                border: "1px solid rgba(139, 92, 246, 0.45)",
-                color: "#ddd6fe",
+                fontWeight: 600,
+                background: "#D1FAE5",
+                border: "1px solid #6EE7B7",
+                color: "#065F46",
               }}
             >
-              ⏩ Skipping quiet stretch…
-            </span>
+              <FastForward size={13} />
+              Skipping quiet stretch...
+            </motion.span>
           )}
         </div>
 
-        {/* Mode buttons */}
+        {/* Mode & Speed buttons */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "11.5px", color: "#93c5fd", marginRight: "2px" }}>Mode:</span>
-          {[
-            { id: "month", label: "📅 Month" },
-            { id: "year", label: "📆 Year" },
-            { id: "story", label: "📖 Story" },
-          ].map((m) => {
-            const active = mode === m.id;
+          <span style={{ fontSize: "11.5px", color: "var(--ej-fg-muted, #475569)", fontWeight: 600, marginRight: "2px" }}>
+            Mode
+          </span>
+          {MODE_OPTIONS.map(({ id, label, Icon }) => {
+            const active = mode === id;
             return (
-              <button
-                key={m.id}
+              <motion.button
+                key={id}
                 type="button"
-                onClick={() => onModeChange?.(m.id)}
+                whileHover={reduceMotion ? undefined : { y: -1 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+                onClick={() => onModeChange?.(id)}
                 aria-pressed={active}
                 style={{
-                  padding: "4px 11px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "5px 11px",
                   borderRadius: "9999px",
                   fontSize: "12px",
-                  fontWeight: active ? 700 : 500,
-                  color: active ? "#ffffff" : "#93c5fd",
-                  background: active ? "rgba(14, 165, 233, 0.4)" : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${active ? "rgba(14,165,233,0.7)" : "rgba(255,255,255,0.12)"}`,
+                  fontWeight: active ? 700 : 600,
+                  color: active ? "#FFFFFF" : "#065F46",
+                  background: active ? "linear-gradient(135deg, #10B981, #059669)" : "#F0FDF4",
+                  border: `1px solid ${active ? "#059669" : "#BCEAD5"}`,
+                  boxShadow: active ? "0 3px 10px rgba(5, 150, 105, 0.25)" : "none",
                   cursor: "pointer",
                 }}
               >
-                {m.label}
-              </button>
+                <Icon size={13} />
+                {label}
+              </motion.button>
             );
           })}
 
-          {/* Speed buttons */}
-          <span style={{ fontSize: "11.5px", color: "#93c5fd", marginLeft: "8px" }}>Speed:</span>
+          <span style={{ fontSize: "11.5px", color: "var(--ej-fg-muted, #475569)", fontWeight: 600, marginLeft: "8px" }}>
+            Speed
+          </span>
           {SPEEDS.map((s) => {
             const active = speed === s;
             return (
-              <button
+              <motion.button
                 key={s}
                 type="button"
+                whileTap={reduceMotion ? undefined : { scale: 0.94 }}
                 onClick={() => onSpeedChange?.(s)}
                 aria-pressed={active}
                 style={{
-                  padding: "3px 8px",
-                  borderRadius: "6px",
+                  padding: "4px 9px",
+                  borderRadius: "8px",
                   fontSize: "11.5px",
-                  fontWeight: active ? 700 : 500,
-                  color: active ? "#ffffff" : "#93c5fd",
-                  background: active ? "rgba(59, 130, 246, 0.4)" : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${active ? "rgba(59,130,246,0.7)" : "rgba(255,255,255,0.1)"}`,
+                  fontWeight: active ? 700 : 600,
+                  color: active ? "#FFFFFF" : "#065F46",
+                  background: active ? "#059669" : "#F0FDF4",
+                  border: `1px solid ${active ? "#059669" : "#BCEAD5"}`,
                   cursor: "pointer",
                 }}
               >
                 {s}x
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
       {/* Scrubber Bar */}
-      <div style={{ position: "relative", marginBottom: "10px" }}>
+      <div style={{ position: "relative", marginBottom: "12px" }}>
         <div
           ref={scrubberRef}
           onClick={handleScrubberClick}
@@ -218,7 +250,8 @@ export default function Timeline({
             position: "relative",
             height: "10px",
             borderRadius: "9999px",
-            background: "rgba(255,255,255,0.12)",
+            background: "#D1FAE5",
+            border: "1px solid #A7F3D0",
             cursor: "pointer",
           }}
         >
@@ -231,7 +264,7 @@ export default function Timeline({
               height: "100%",
               width: `${progress * 100}%`,
               borderRadius: "9999px",
-              background: "linear-gradient(90deg, #0ea5e9, #818cf8)",
+              background: "linear-gradient(90deg, #34D399, #059669)",
               transition: reduceMotion ? "none" : "width 0.2s ease",
             }}
           />
@@ -250,7 +283,8 @@ export default function Timeline({
                 borderRadius: "50%",
                 transform: "translate(-50%, -50%)",
                 background: dot.color,
-                boxShadow: `0 0 6px ${dot.color}`,
+                border: "1.5px solid #FFFFFF",
+                boxShadow: "0 1px 4px rgba(6, 78, 59, 0.25)",
                 zIndex: 2,
               }}
             />
@@ -262,13 +296,13 @@ export default function Timeline({
               position: "absolute",
               top: "50%",
               left: `${progress * 100}%`,
-              width: "16px",
-              height: "16px",
+              width: "18px",
+              height: "18px",
               borderRadius: "50%",
-              border: "2px solid #ffffff",
-              background: "#0ea5e9",
+              border: "2.5px solid #FFFFFF",
+              background: "#059669",
               transform: "translate(-50%, -50%)",
-              boxShadow: "0 0 10px rgba(14,165,233,0.9)",
+              boxShadow: "0 2px 10px rgba(5, 150, 105, 0.45)",
               zIndex: 3,
             }}
           />
@@ -281,8 +315,8 @@ export default function Timeline({
             justifyContent: "space-between",
             marginTop: "6px",
             fontSize: "11px",
-            color: "#60a5fa",
-            opacity: 0.75,
+            fontWeight: 600,
+            color: "#475569",
             userSelect: "none",
           }}
         >
@@ -300,23 +334,26 @@ export default function Timeline({
       </div>
 
       {/* Transport Controls */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-        <TransportBtn onClick={() => onSeek?.(safeStart, 0)} label="Replay from start" small>
-          ⟳ Start
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", flexWrap: "wrap" }}>
+        <TransportBtn onClick={() => onSeek?.(safeStart, 0)} label="Replay from start" small reduceMotion={reduceMotion}>
+          <RotateCcw size={13} />
+          <span>Start</span>
         </TransportBtn>
-        <TransportBtn onClick={() => onLeap?.(-10)} label="Jump back 10 years" small>
+        <TransportBtn onClick={() => onLeap?.(-10)} label="Jump back 10 years" small reduceMotion={reduceMotion}>
           -10y
         </TransportBtn>
-        <TransportBtn onClick={() => onLeap?.(-5)} label="Jump back 5 years" small>
+        <TransportBtn onClick={() => onLeap?.(-5)} label="Jump back 5 years" small reduceMotion={reduceMotion}>
           -5y
         </TransportBtn>
-        <TransportBtn onClick={() => onStep?.(-1)} label="Step back one month">
-          ⏮
+        <TransportBtn onClick={() => onStep?.(-1)} label="Step back one month" reduceMotion={reduceMotion}>
+          <SkipBack size={15} />
         </TransportBtn>
 
         {/* Play / Pause */}
-        <button
+        <motion.button
           type="button"
+          whileHover={reduceMotion ? undefined : { scale: 1.06 }}
+          whileTap={reduceMotion ? undefined : { scale: 0.94 }}
           onClick={() => onToggle?.()}
           aria-label={playing ? "Pause" : "Play"}
           aria-pressed={playing}
@@ -327,51 +364,58 @@ export default function Timeline({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: "20px",
-            color: "#ffffff",
-            border: "none",
+            color: "#FFFFFF",
+            border: "2px solid #FFFFFF",
             cursor: "pointer",
             background: playing
-              ? "linear-gradient(135deg, #ef4444, #dc2626)"
-              : "linear-gradient(135deg, #0ea5e9, #2563eb)",
-            boxShadow: `0 0 22px ${playing ? "rgba(239,68,68,0.5)" : "rgba(14,165,233,0.5)"}`,
+              ? "linear-gradient(135deg, #F97316, #EA580C)"
+              : "linear-gradient(135deg, #10B981, #059669)",
+            boxShadow: playing
+              ? "0 8px 20px rgba(234, 88, 12, 0.35)"
+              : "0 8px 20px rgba(5, 150, 105, 0.35)",
           }}
         >
-          {playing ? "⏸" : "▶"}
-        </button>
+          {playing ? <Pause size={20} fill="#FFFFFF" /> : <Play size={20} fill="#FFFFFF" style={{ marginLeft: "2px" }} />}
+        </motion.button>
 
-        <TransportBtn onClick={() => onStep?.(1)} label="Step forward one month">
-          ⏭
+        <TransportBtn onClick={() => onStep?.(1)} label="Step forward one month" reduceMotion={reduceMotion}>
+          <SkipForward size={15} />
         </TransportBtn>
-        <TransportBtn onClick={() => onLeap?.(5)} label="Jump forward 5 years" small>
+        <TransportBtn onClick={() => onLeap?.(5)} label="Jump forward 5 years" small reduceMotion={reduceMotion}>
           +5y
         </TransportBtn>
-        <TransportBtn onClick={() => onLeap?.(10)} label="Jump forward 10 years" small>
+        <TransportBtn onClick={() => onLeap?.(10)} label="Jump forward 10 years" small reduceMotion={reduceMotion}>
           +10y
         </TransportBtn>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-function TransportBtn({ onClick, label, children, small = false }) {
+function TransportBtn({ onClick, label, children, small = false, reduceMotion = false }) {
   return (
-    <button
+    <motion.button
       type="button"
+      whileHover={reduceMotion ? undefined : { y: -1 }}
+      whileTap={reduceMotion ? undefined : { scale: 0.95 }}
       onClick={onClick}
       aria-label={label}
       title={label}
       style={{
-        padding: small ? "5px 10px" : "6px 12px",
-        fontSize: small ? "11.5px" : "14px",
-        borderRadius: "8px",
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        color: "var(--ej-fg, #bae6fd)",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "4px",
+        padding: small ? "6px 10px" : "7px 12px",
+        fontSize: small ? "11.5px" : "13px",
+        fontWeight: 600,
+        borderRadius: "10px",
+        background: "#F0FDF4",
+        border: "1px solid #BCEAD5",
+        color: "#064E3B",
         cursor: "pointer",
       }}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }

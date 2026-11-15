@@ -1,36 +1,39 @@
 /**
  * LAYER TOGGLES SLOT
+ * Pastel Mint & White 3D card with Lucide icons + Framer Motion hover feedback.
  * Contract props:
  *   { layers, onToggle, reduceMotion }
- *   where layers = [{ id, label, available, reason, enabled }]
  */
 import React from "react";
+import { motion } from "framer-motion";
+import { Activity, CloudRain, Droplets, Music, SlidersHorizontal, Thermometer, Wind } from "lucide-react";
 
 const LAYER_META = {
-  temperature: { icon: "🌡️", color: "#fb923c" },
-  rainfall: { icon: "🌧️", color: "#60a5fa" },
-  drought: { icon: "🏜️", color: "#d97706" },
-  quakes: { icon: "🌋", color: "#f59e0b" },
-  air: { icon: "🌫️", color: "#94a3b8" },
+  temperature: { Icon: Thermometer, color: "#EA580C" },
+  rainfall: { Icon: CloudRain, color: "#0284C7" },
+  drought: { Icon: Droplets, color: "#D97706" },
+  quakes: { Icon: Activity, color: "#B45309" },
+  air: { Icon: Wind, color: "#475569" },
 };
 
 export default function LayerToggles({ layers = [], onToggle, reduceMotion = false }) {
   return (
-    <div
-      style={{
-        background: "var(--ej-card-bg, rgba(13, 27, 42, 0.82))",
-        border: "1px solid var(--ej-border, rgba(255,255,255,0.1))",
-        borderRadius: "12px",
-        padding: "12px 14px",
-      }}
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.3 }}
+      className="ej-card-3d"
+      style={{ padding: "14px 16px" }}
     >
-      <h3 style={{ fontSize: "12px", fontWeight: 700, color: "#93c5fd", margin: "0 0 8px 0" }}>
-        🎛 Instrument Layers
-      </h3>
+      <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "10px" }}>
+        <SlidersHorizontal size={15} color="#059669" />
+        <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#064E3B", margin: 0 }}>Instrument Layers</h3>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {layers.map((item) => {
-          const meta = LAYER_META[item.id] ?? { icon: "🎵", color: "#38bdf8" };
+          const meta = LAYER_META[item.id] ?? { Icon: Music, color: "#059669" };
+          const IconComponent = meta.Icon;
           const available = item.available !== false;
           const enabled = item.enabled !== false && available;
 
@@ -41,10 +44,11 @@ export default function LayerToggles({ layers = [], onToggle, reduceMotion = fal
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "6px 8px",
-                borderRadius: "8px",
-                background: enabled ? "rgba(255,255,255,0.05)" : "transparent",
-                opacity: available ? 1 : 0.48,
+                padding: "7px 10px",
+                borderRadius: "10px",
+                background: enabled ? "#ECFDF5" : "#F8FAFC",
+                border: `1px solid ${enabled ? "#BCEAD5" : "#E2E8F0"}`,
+                opacity: available ? 1 : 0.52,
                 cursor: available ? "pointer" : "not-allowed",
                 transition: reduceMotion ? "none" : "all 0.15s ease",
               }}
@@ -55,28 +59,25 @@ export default function LayerToggles({ layers = [], onToggle, reduceMotion = fal
                 disabled={!available}
                 onChange={() => available && onToggle?.(item.id)}
                 aria-label={`Toggle ${item.label} layer`}
+                style={{ accentColor: "#059669" }}
               />
-              <span style={{ fontSize: "14px" }}>{meta.icon}</span>
-              <span style={{ fontSize: "12px", color: "var(--ej-fg, #ffffff)", flex: 1, fontWeight: 500 }}>
-                {item.label}
-              </span>
+              <IconComponent size={15} color={meta.color} />
+              <span style={{ fontSize: "12.5px", color: "#064E3B", flex: 1, fontWeight: 600 }}>{item.label}</span>
 
               {!available && item.reason && (
-                <span style={{ fontSize: "10.5px", color: "#7dd3fc", opacity: 0.8 }}>
-                  {item.reason}
-                </span>
+                <span style={{ fontSize: "10.5px", color: "#475569", fontWeight: 600 }}>{item.reason}</span>
               )}
               {available && !enabled && (
-                <span style={{ fontSize: "10.5px", color: meta.color }}>muted</span>
+                <span style={{ fontSize: "10.5px", color: meta.color, fontWeight: 600 }}>muted</span>
               )}
             </label>
           );
         })}
       </div>
 
-      <p style={{ fontSize: "10.5px", color: "#60a5fa", opacity: 0.7, margin: "8px 0 0 0" }}>
+      <p style={{ fontSize: "10.5px", color: "#475569", margin: "10px 0 0 0", lineHeight: 1.4 }}>
         Layers join as satellite records begin — the orchestra grows over time.
       </p>
-    </div>
+    </motion.div>
   );
 }
