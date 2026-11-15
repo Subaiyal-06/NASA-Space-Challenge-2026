@@ -15,12 +15,15 @@ import HistoryChart from "./ui/HistoryChart.jsx";
 import BadgeToast from "./ui/BadgeToast.jsx";
 import CompareCard from "./ui/CompareCard.jsx";
 import CompareControl from "./ui/CompareControl.jsx";
+import AccessMenu from "./ui/AccessMenu.jsx";
+import LiveDescription from "./ui/LiveDescription.jsx";
+import { describeMonth } from "./ui/describe.js";
 import WeatherLayer from "./weather/WeatherLayer.jsx";
 import EdgeGlow, { beatSeconds } from "./weather/EdgeGlow.jsx";
 import { weatherFor } from "./weather/rules.js";
 import { useFx } from "./weather/fx.js";
 import { useCity } from "./ui/useCity.js";
-import { useStudio, useMotion } from "./state.js";
+import { useStudio, useMotion, useA11y } from "./state.js";
 import { useClock } from "../state/clock.js";
 import { initAppBridge, getAudioEngine, syncAudioToClock } from "../app/flow.js";
 import { attachKeyboardShortcuts } from "../app/keyboard.js";
@@ -59,6 +62,12 @@ export default function StudioApp() {
   const cityMeta = useMemo(() => cities.find((c) => c.id === selectedId) ?? null, [selectedId]);
   const snapshot = useMemo(() => (city ? getSnapshot(city, year, month, futureEnabled ? scenario : undefined) : null), [city, year, month, futureEnabled, scenario]);
   const wx = useMemo(() => (snapshot ? weatherFor(snapshot, { city, enabled: layers, showGreenery }) : weatherFor(null)), [snapshot, city, layers, showGreenery]);
+  // ---- accessibility: high contrast, and the month described in words for screen readers and the voice ----
+  const highContrast = useA11y((s) => s.highContrast);
+  const describeOn = useA11y((s) => s.describe);
+  const playing = useClock((s) => s.playing);
+  const description = useMemo(() => (snapshot && city ? describeMonth({ cityName: cityMeta?.name ?? selectedId, snapshot, wx, city, enabled: layers, showGreenery }) : ""), [snapshot, city, wx, layers, showGreenery, cityMeta, selectedId]);
+
   // ---- compare: a second city, heard in the right ear (city A in the left) ----
   const cityBId = useClock((s) => s.cityB);
   const { city: cityB } = useCity(cityBId, { scenario, futureEnabled });
@@ -109,7 +118,7 @@ export default function StudioApp() {
   const onKeyDown = (e) => { if ((e.code === "Space" || e.key === " ") && e.target.tagName === "BUTTON") e.stopPropagation(); };
 
   return (
-    <div className={`studio${reduce ? " studio--calm" : ""}${selectedId && city ? " studio--bar" : ""}${comparing ? " studio--cmp" : ""}`} data-phase={phase} onKeyDown={onKeyDown}>
+    <div className={`studio${reduce ? " studio--calm" : ""}${selectedId && city ? " studio--bar" : ""}${comparing ? " studio--cmp" : ""}${highContrast ? " studio--hc" : ""}`} data-phase={phase} onKeyDown={onKeyDown} role="main" aria-label="Earth Jukebox: Pakistan">
       <div className={`stage-wrap${shaking ? " is-shaking" : ""}`} style={{ "--amp": `${Math.min(7, 2 + (quakeMagnitude - 5) * 1.6)}px` }}>
         <div className={`pane pane--a${comparing ? " is-split" : ""}`}>
           <GlobeStage phase={phase} cities={cities} selectedId={selectedId} onSelect={select} onArrived={arrived} reduceMotion={reduce} onReady={setMap} onDisc={setDiscUp}
@@ -141,6 +150,9 @@ export default function StudioApp() {
           <span>Pakistan</span>
         </div>
       </header>
+
+      <AccessMenu description={description} />
+      {selectedId && city && <LiveDescription text={description} playing={playing} wx={wx} month={month} enabled={describeOn} />}
 
       <button type="button" role="switch" aria-checked={!reduce} className="motion-toggle" onClick={() => setMotion(reduce ? "on" : "reduced")}>
         <span className="motion-toggle__knob" aria-hidden="true" />

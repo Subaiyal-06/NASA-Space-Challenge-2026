@@ -43,3 +43,15 @@ export function useMotion() {
   const reduce = motion === "reduced" || (motion === "auto" && osAsksForLess);
   return { reduce, osAsksForLess, motion, setMotion };
 }
+
+// ---- accessibility preferences (kept on this computer) ----
+const A11Y_KEY = "earth-jukebox-studio-a11y";
+const readA11y = () => { try { return { describe: true, highContrast: false, ...(JSON.parse(localStorage.getItem(A11Y_KEY)) ?? {}) }; } catch { return { describe: true, highContrast: false }; } };
+const saveA11y = (s) => { try { localStorage.setItem(A11Y_KEY, JSON.stringify({ describe: s.describe, highContrast: s.highContrast })); } catch { /* storage may be unavailable */ } };
+
+/** describe: keep a text description of the month up to date for screen readers. highContrast: stronger colours, no blur. */
+export const useA11y = create((set, get) => ({
+  ...readA11y(),
+  setDescribe: (describe) => { set({ describe }); saveA11y(get()); },
+  setHighContrast: (highContrast) => { set({ highContrast }); saveA11y(get()); },
+}));

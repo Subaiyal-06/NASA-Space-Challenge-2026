@@ -65,6 +65,8 @@ export default function HistoryChart({ city, enabled = [], range, onClose }) {
   const summary = model ? `${t.label} from ${from} to ${to}. ${t.note}` : `${t.label}: no data.`;
   const cx = model ? model.axes.x(cursor) : 0;
   const shown = hover ?? null;
+  // when not hovering, the readout follows the playhead, so keyboard and screen-reader users get the value too
+  const here = model ? model.points.find((p) => p.year === year && p.month === month) ?? null : null;
 
   return (
     <section className="hist" aria-label="History chart">
@@ -94,8 +96,9 @@ export default function HistoryChart({ city, enabled = [], range, onClose }) {
             {cursor >= toIndex(from, 0) && cursor <= toIndex(to, 11) && <line x1={cx} x2={cx} y1={model.axes.plot.top} y2={model.axes.plot.bottom} className="hist__cursor" />}
             {shown && <circle cx={model.axes.x(toIndex(shown.year, shown.month))} cy={model.axes.y(shown.value)} r="4.5" className="hist__dot" />}
           </svg>
-          <p className="hist__read" aria-live="off">
-            {shown ? <><strong>{formatDate(shown.year, shown.month)}</strong> {fmt(shown.value, t)}</> : <span>{t.note} Click to jump.</span>}
+          <p className="hist__read" aria-live={shown ? "off" : "polite"}>
+            {shown ? <><strong>{formatDate(shown.year, shown.month)}</strong> {fmt(shown.value, t)}</>
+              : <><strong>{formatDate(year, month)}</strong> {here ? `${t.label}: ${fmt(here.value, t)}` : `no ${t.label.toLowerCase()} reading this month`}. <span>{t.note} Click to jump, or use the arrow keys.</span></>}
           </p>
         </div>
       ) : <p className="hist__read">No {t.label.toLowerCase()} data for this city.</p>}
